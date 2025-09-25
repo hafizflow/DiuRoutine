@@ -1,10 +1,3 @@
-//
-//  MonthView.swift
-//  DiuRoutine
-//
-//  Created by Hafizur Rahman on 23/9/25.
-//
-
 import SwiftUI
 
 struct MonthView: View {

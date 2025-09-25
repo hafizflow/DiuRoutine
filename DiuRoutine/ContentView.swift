@@ -1,14 +1,7 @@
-//
-//  ContentView.swift
-//  DiuRoutine
-//
-//  Created by Hafizur Rahman on 23/9/25.
-//
-
 import SwiftUI
 
 struct ContentView: View {
-    @State private var selection: Date?
+    @State private var selection: Date? = .now
     @State private var title: String = Calendar.monthAndYear(from: .now)
     @State private var focusedWeek: Week = .current
     @State private var calendarType: CalendarType = .week
@@ -47,9 +40,27 @@ struct ContentView: View {
                 HStack {
                     Text(title).font(.title2.bold())
                     Spacer()
-                    Image(systemName: "gearshape.fill")
-                        .imageScale(.large)
-                        .foregroundStyle(.secondary)
+                    
+                    // Back to today button
+                    Button(action: {
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar")
+                                .font(.system(size: 12))
+                            Text("Today")
+                                .font(.subheadline)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 6)
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.primary, lineWidth: 1)
+                            }
+                        )
+                        .foregroundColor(.primary)
+                        .cornerRadius(8)
+                    }
                     
                 }
                 .padding(.bottom)
@@ -108,9 +119,6 @@ struct ContentView: View {
             .onChange(of: selection) { _, newValue in
                 guard let newValue else { return }
                 title = Calendar.monthAndYear(from: newValue)
-            }
-            .onChange(of: focusedWeek) { _, n in
-                print(n.id)
             }
             .gesture(
                 DragGesture(minimumDistance: .zero)

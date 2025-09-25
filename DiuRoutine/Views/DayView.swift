@@ -1,10 +1,3 @@
-//
-//  DayView.swift
-//  DiuRoutine
-//
-//  Created by Hafizur Rahman on 23/9/25.
-//
-
 import SwiftUI
 
 struct DayView: View {
@@ -15,8 +8,8 @@ struct DayView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text(Calendar.dayNumber(from: date))
-                .background{
-                    if date == selectedDate {
+                .background {
+                    if let selectedDate, Calendar.current.isDate(date, inSameDayAs: selectedDate) {
                         Circle()
                             .foregroundStyle(.teal)
                             .opacity(0.3)
@@ -30,7 +23,8 @@ struct DayView: View {
                 }
         }
         .foregroundStyle(selectedTextColor)
-        .font(.system(.body, design: .rounded, weight: date == selectedDate ? .semibold : .medium))
+        .font(.system(.body, design: .rounded,
+                      weight: isSelected ? .semibold : .medium))
         .onTapGesture {
             withAnimation(.easeInOut) {
                 selectedDate = date
@@ -38,14 +32,20 @@ struct DayView: View {
         }
     }
     
+    private var isSelected: Bool {
+        guard let selectedDate else { return false }
+        return Calendar.current.isDate(date, inSameDayAs: selectedDate)
+    }
+    
     private var selectedTextColor: Color {
-        if selectedDate == date {
+        if isSelected {
             return colorScheme == .light ? .black : .teal
         } else {
             return .primary
         }
     }
 }
+
 
 #Preview {
     DayView(date: .now, selectedDate: .constant(nil))

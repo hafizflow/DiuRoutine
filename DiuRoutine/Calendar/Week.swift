@@ -1,10 +1,3 @@
-//
-//  Week.swift
-//  DiuRoutine
-//
-//  Created by Hafizur Rahman on 23/9/25.
-//
-
 import Foundation
 
 struct Week: Hashable, Identifiable {
@@ -31,5 +24,8 @@ extension Week: Equatable {
 }
 
 extension Week {
-    static let current = Week(days: Calendar.currentWeek(from: Calendar.nearestMonday(from: .now)), order: .current)
+    static let current = Week(
+        days: Calendar.currentWeek(from: Calendar.nearestMonday(from: .now)),
+        order: .current
+    )
 }
