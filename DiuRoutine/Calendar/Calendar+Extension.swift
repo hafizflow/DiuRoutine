@@ -1,18 +1,18 @@
 import Foundation
 
 extension Calendar {
-    static func nearestMonday(from date: Date = .now) -> Date {
+    static func nearestSaturday(from date: Date = .now) -> Date {
         let calendar = Calendar.current
         let weekday = calendar.component(.weekday, from: date)
-        let daysToSubtract = weekday
-        let theNearestMonday = calendar.date(byAdding: .day, value: -daysToSubtract, to: date)!
+        let daysToSubtract = weekday % 7
+        let theNearestSaturday = calendar.date(byAdding: .day, value: -daysToSubtract, to: date)!
         
-        var dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: theNearestMonday)
+        var dateComponents = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute, .second], from: theNearestSaturday)
         dateComponents.hour = 9
         dateComponents.minute = 0
         dateComponents.second = 0
         
-        return Calendar.current.date(from: dateComponents) ?? theNearestMonday
+        return Calendar.current.date(from: dateComponents) ?? theNearestSaturday
     }
     
     static func currentWeek(from date: Date = .now) -> [Date] {
@@ -51,7 +51,7 @@ extension Calendar {
     static func weekAndYear(from date: Date) -> String {
         let calendar = Calendar.current
         let weekNumber = calendar.component(.weekOfYear, from: date)
-        let year = calendar.component(.yearForWeekOfYear, from: date) // Handles ISO year
+        let year = calendar.component(.yearForWeekOfYear, from: date)
         return "\(weekNumber)_\(year)"
     }
     

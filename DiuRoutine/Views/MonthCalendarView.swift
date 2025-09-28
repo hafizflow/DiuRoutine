@@ -14,34 +14,35 @@ struct MonthCalendarView: View {
     
     init(_ title: Binding<String>, selection: Binding<Date?>, focused: Binding<Week>, isDragging: Bool,
          dragProgress: CGFloat) {
-        _title = title
-        _focused = focused
-        _selection = selection
-        self.isDragging = isDragging
-        self.dragProgress = dragProgress
+            _title = title
+            _focused = focused
+            _selection = selection
+            self.isDragging = isDragging
+            self.dragProgress = dragProgress
         
-        let creationDate = focused.wrappedValue.days.last
-        var currentMonth = Month(from: creationDate ?? .now, order: .current)
+            let creationDate = focused.wrappedValue.days.last
+            var currentMonth = Month(from: creationDate ?? .now, order: .current)
+            
+            if let selection = selection.wrappedValue,
+               let lastDayOfTheMonth = currentMonth.weeks.first?.days.last,
+               !Calendar.isSameMonth(lastDayOfTheMonth, selection),
+               let previousMonth = currentMonth.previousMonth
+            {
+                if focused.wrappedValue.days.contains(selection) {
+                    currentMonth = previousMonth
+                }
+            }
         
-        if let selection = selection.wrappedValue,
-           let lastDayOfTheMonth = currentMonth.weeks.first?.days.last,
-           !Calendar.isSameMonth(lastDayOfTheMonth, selection),
-           let previousMonth = currentMonth.previousMonth
-        {
-        if focused.wrappedValue.days.contains(selection) {
-            currentMonth = previousMonth
-        }
-        }
-        
-        _months = State(
-            initialValue: [
-                currentMonth.previousMonth,
-                currentMonth,
-                currentMonth.nextMonth
-            ].compactMap(\.self)
-        )
-        _position = State(initialValue: ScrollPosition(id: currentMonth.id))
+            _months = State(
+                initialValue: [
+                    currentMonth.previousMonth,
+                    currentMonth,
+                    currentMonth.nextMonth
+                ].compactMap(\.self)
+            )
+            _position = State(initialValue: ScrollPosition(id: currentMonth.id))
     }
+
     
     var body: some View {
         ScrollView(.horizontal){
@@ -130,9 +131,10 @@ extension MonthCalendarView {
 #Preview {
     MonthCalendarView(
         .constant(""),
-        selection: .constant(nil),
+        selection: .constant(.now),
         focused: .constant(.current),
         isDragging: false,
         dragProgress: 1
     )
 }
+

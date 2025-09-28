@@ -25,7 +25,7 @@ extension Week: Equatable {
 
 extension Week {
     static let current = Week(
-        days: Calendar.currentWeek(from: Calendar.nearestMonday(from: .now)),
+        days: Calendar.currentWeek(from: Calendar.nearestSaturday(from: .now)),
         order: .current
     )
 }

@@ -36,21 +36,7 @@ struct CalendarHeaderView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Student").font(.title.bold())
-                Spacer()
-                Button {
-                        // Action here
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.title2)
-                        .foregroundColor(.primary)
-                }
-            }
-            .padding(.bottom)
-            .padding(.horizontal)
-            
+        VStack(spacing: 0) {            
             HStack {
                 Text(title).font(.title2.bold())
                 Spacer()
@@ -60,7 +46,7 @@ struct CalendarHeaderView: View {
                         .foregroundColor(.primary)
                 }
             }
-            .padding(.bottom)
+            .padding(.vertical)
             .padding(.horizontal)
             
             HStack {

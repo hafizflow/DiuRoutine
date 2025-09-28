@@ -1,7 +1,8 @@
 import SwiftUI
+import SwiftData
 
 struct StudentView: View {
-    @State private var selectedDate: Date? = .now
+    @State private var selectedDate: Date? = Date()
     @State private var selectedSection: RoutineType = .routine
     
     enum RoutineType: String, CaseIterable, Identifiable {
@@ -9,26 +10,66 @@ struct StudentView: View {
         var id: Self { self }
     }
     
+    @State private var searchText: String = ""
+    @Query private var routines: [RoutineDO]
+
+    
+    private var allSections: [String] {
+        let sections = routines.compactMap { $0.section }
+        let mainSections = sections.compactMap { section -> String? in
+                // Extract main section by removing digits at the end
+            if let range = section.range(of: #"\d+$"#, options: .regularExpression) {
+                return String(section[..<range.lowerBound])
+            }
+            return section
+        }
+        return Array(Set(mainSections)).sorted()
+    }
+    
     var body: some View {
-        VStack(spacing: 0) {
-            CalendarHeaderView(selectedDate: $selectedDate)
-            
-            Picker("Section", selection: $selectedSection) {
-                Text("Routine").tag(RoutineType.routine)
-                Text("Insights").tag(RoutineType.insights)
-            }
-            .pickerStyle(.segmented)
-            .frame(width: 200)
-            
-            TabView(selection: $selectedSection) {
-                RoutinePageView(selectedDate: selectedDate)
-                    .tag(RoutineType.routine)
+        NavigationStack {
+            VStack(spacing: 0) {
+                CalendarHeaderView(selectedDate: $selectedDate)
                 
-                InsightsPageView(selectedDate: selectedDate)
-                    .tag(RoutineType.insights)
+                Picker("Section", selection: $selectedSection) {
+                    Text("Routine").tag(RoutineType.routine)
+                    Text("Insights").tag(RoutineType.insights)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 200)
+                
+                TabView(selection: $selectedSection) {
+                    RoutinePageView(selectedDate: selectedDate)
+                        .tag(RoutineType.routine)
+                    
+                    InsightsPageView(selectedDate: selectedDate)
+                        .tag(RoutineType.insights)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .animation(.interactiveSpring, value: selectedSection)
             }
-            .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-            .animation(.interactiveSpring, value: selectedSection)
+            .searchable(text: $searchText, prompt: "Search Routine") {
+                    // Search suggestions showing all sections from SwiftData
+                ForEach(allSections.filter { section in
+                    searchText.isEmpty || section.localizedCaseInsensitiveContains(searchText)
+                }, id: \.self) { section in
+                    Text(section)
+                        .searchCompletion(section)
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) { Text("Student").font(.title.bold())}
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                            // Action
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
         }
     }
 }

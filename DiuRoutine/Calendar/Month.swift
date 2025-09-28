@@ -17,7 +17,7 @@ struct Month: Identifiable, Equatable {
         
         initializedDate = Calendar.current.date(from: components) ?? date
         
-        let nearestMonday = Calendar.nearestMonday(from: initializedDate)
+        let nearestMonday = Calendar.nearestSaturday(from: initializedDate)
         let currentWeekDays = Calendar.currentWeek(from: nearestMonday)
         
         var weeks: [Week] = [
