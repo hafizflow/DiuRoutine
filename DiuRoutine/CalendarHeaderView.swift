@@ -47,7 +47,7 @@ struct CalendarHeaderView: View {
                 }
             }
             .padding(.vertical)
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
             
             HStack {
                 ForEach(Array(symbols.enumerated()), id: \.offset) { index, symbol in

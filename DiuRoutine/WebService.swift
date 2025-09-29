@@ -17,7 +17,6 @@ class RoutineVersionStore: ObservableObject {
             UserDefaults.standard.set(routineVersion, forKey: "routineVersion")
         }
     }
-    
     init() {
         self.routineVersion = UserDefaults.standard.string(forKey: "routineVersion") ?? ""
     }
@@ -31,21 +30,17 @@ class WebService {
         modelContext: ModelContext
     ) async {
         do {
-            // Changed to single object, not array
             let versionResponse: VersionResponse = try await fetchSingleData(fromUrl: "https://diu.zahidp.xyz/api/version")
-
             
-//            if versionResponse.data.version != versionStore.routineVersion {
-//                print("New version detected! Updating database...")
-//                await updateDataInDatabase(modelContext: modelContext)
-//                
-//                versionStore.routineVersion = versionResponse.data.version
-//                print("Version updated to: \(versionResponse.data.version)")
-//            } else {
-//                print("Version is the same. No update needed.")
-//            }
-            
-            await updateDataInDatabase(modelContext: modelContext)
+            if versionResponse.data.version != versionStore.routineVersion {
+                print("New version detected! Updating database...")
+                await updateDataInDatabase(modelContext: modelContext)
+                
+                versionStore.routineVersion = versionResponse.data.version
+                print("Version updated to: \(versionResponse.data.version)")
+            } else {
+                print("Version is the same. No update needed.")
+            }
             
         } catch {
             print("Failed to fetch version: \(error)")
