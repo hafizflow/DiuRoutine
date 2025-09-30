@@ -4,25 +4,47 @@ import SwiftUI
 struct TeacherView: View {
     @State private var selectedDate: Date? = .now
     
+    
+    @State private var searchText: String = ""
     var body: some View {
-        VStack(spacing: 0) {
-                // Calendar header
-            CalendarHeaderView(selectedDate: $selectedDate)
-            
-                // Teacher content
-            ScrollView {
-                VStack(spacing: 16) {
-                    TeacherScheduleCard(selectedDate: selectedDate)
-                    TeacherClassesCard()
-                    TeacherStudentsCard()
+        NavigationStack {
+            VStack(spacing: 0) {
+                    // Calendar header
+                CalendarHeaderView(selectedDate: $selectedDate)
+                    .background(Color(.systemBackground))
+                    .zIndex(1)
+                    // Teacher content
+                ScrollView {
+                    VStack(spacing: 16) {
+                        TeacherScheduleCard(selectedDate: selectedDate)
+                        TeacherClassesCard()
+                        TeacherStudentsCard()
+                    }
+                    .padding()
                 }
-                .padding()
+                .background(Color(.systemGroupedBackground))
             }
-            .background(Color(.systemGroupedBackground))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .title) {
+                    Text("Teacher").font(.title.bold())
+                }
+                
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                            // Settings action
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .searchable(text: $searchText, prompt: "Hello")
         }
-        .navigationBarHidden(true)
+        
     }
 }
+
 
 #Preview {
     TeacherView()
@@ -42,6 +64,19 @@ struct TeacherClassesCard: View {
             }
             
             VStack(spacing: 8) {
+                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
+                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
+                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
+                
+                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
+                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
+                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
+                
+                
+                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
+                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
+                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
+                
                 ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
                 ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
                 ClassItem(name: "Calculus", grade: "Grade 11", students: 24)

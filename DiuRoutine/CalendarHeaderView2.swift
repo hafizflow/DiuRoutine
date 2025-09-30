@@ -5,8 +5,8 @@ struct CalendarHeaderView2: View {
     
     var body: some View {
         WeekView2(selectedDate: $selectedDate)
-            .padding(.bottom, 24)
-            .padding(.top, 8)
+            .padding(.bottom, 20)
+            .padding(.top, 6)
     }
 }
 
@@ -14,11 +14,12 @@ struct WeekView2: View {
     @Binding var selectedDate: Date
     @State private var showDatePicker = false
     @State private var weekOffset = 0
-    @Environment(\.colorScheme) var colorScheme
+    
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .soft)
     
     private var calendar: Calendar {
         var cal = Calendar.current
-        cal.firstWeekday = 7 // Saturday
+        cal.firstWeekday = 7
         return cal
     }
     
@@ -53,7 +54,7 @@ struct WeekView2: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 0) {
                 
-                // Show DatePicker Button
+                    // Show DatePicker Button
                 Button(action: {
                     showDatePicker = true
                 }) {
@@ -63,16 +64,17 @@ struct WeekView2: View {
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
                         
-                        Image(systemName: "calendar")
+                        Image(systemName: "calendar.badge.checkmark")
                             .frame(width: 40, height: 40)
                             .font(.system(size: 18))
                             .foregroundColor(.primary)
                     }
                 }
                 Spacer()
-            
-                // Today Button
+                
+                    // Today Button
                 Button {
+                    impactFeedback.impactOccurred()
                     withAnimation {
                         weekOffset = 0
                         selectedDate = Date()
@@ -87,7 +89,7 @@ struct WeekView2: View {
                     .padding(8)
                     .background(
                         ZStack {
-                            colorScheme == .light ? Color.white : Color.black
+                            Color.clear
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(Color.gray, lineWidth: 1)
                         }
@@ -109,6 +111,7 @@ struct WeekView2: View {
                 )
                 .datePickerStyle(.graphical)
                 .onChange(of: selectedDate) { _, _ in
+                    impactFeedback.impactOccurred()
                     showDatePicker = false
                 }
                 .padding(.horizontal)
@@ -125,7 +128,8 @@ struct WeekView2: View {
                     VStack {
                         WeekRowView(
                             baseDate: getDateForWeek(offset),
-                            selectedDate: $selectedDate
+                            selectedDate: $selectedDate,
+                            impactFeedback: impactFeedback
                         )
                         .padding(.horizontal, 4)
                     }
@@ -148,12 +152,16 @@ struct WeekView2: View {
                 }
             }
         }
+        .onAppear {
+            impactFeedback.prepare()
+        }
     }
 }
 
 struct WeekRowView: View {
     let baseDate: Date
     @Binding var selectedDate: Date
+    let impactFeedback: UIImpactFeedbackGenerator
     
     private var calendar: Calendar {
         var cal = Calendar.current
@@ -179,6 +187,7 @@ struct WeekRowView: View {
                     isSelected: calendar.isDate(date, inSameDayAs: selectedDate)
                 )
                 .onTapGesture {
+                    impactFeedback.impactOccurred()
                     selectedDate = date
                 }
             }
@@ -216,7 +225,7 @@ struct DayView2: View {
     
     private var textColor: Color {
         if isSelected {
-            return .white
+            return .primary
         }
         if isToday {
             return .teal
@@ -228,7 +237,7 @@ struct DayView2: View {
         if isSelected {
             return .teal
         }
-        return isToday ? .teal.opacity(0.5) : .gray
+        return isToday ? .teal : .gray
     }
     
     var body: some View {
@@ -246,9 +255,9 @@ struct DayView2: View {
         .padding(.vertical, 8)
         .background(
             ZStack {
-                Color(isSelected ? Color.teal.opacity(0.3) : Color.black)
+                Color(isSelected ? Color.teal.opacity(0.3) : .clear)
                 RoundedRectangle(cornerRadius: 10)
-                    .stroke(borderColor, lineWidth: isToday ? 2 : 1)
+                    .stroke(borderColor, lineWidth: isToday ? 2 : 1.2)
             }
         )
         .cornerRadius(10)
