@@ -9,6 +9,7 @@ struct StudentView: View {
     
     @Binding var isSearchActive: Bool
     @State var insightSheet: Bool = false
+    @Namespace private var animation
     
     enum RoutineType: String, CaseIterable, Identifiable {
         case routine, insights
@@ -30,7 +31,6 @@ struct StudentView: View {
         guard !searchText.isEmpty else { return false }
         return allSections.contains(where: { $0.caseInsensitiveCompare(searchText) == .orderedSame })
     }
-    
     
     private var filteredRoutines: [RoutineDO] {
         guard !searchText.isEmpty else { return [] }
@@ -129,17 +129,32 @@ struct StudentView: View {
             
             let startTime = sortedGroup.first?.startTime ?? "N/A"
             let endTime   = sortedGroup.last?.endTime ?? "N/A"
-            let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown Course"
+            let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown"
+            let courseCode = key.courseCode
+            let teacherInitial = key.teacherInitial
             let section     = sortedGroup.first?.section ?? "N/A"
             let room        = sortedGroup.first?.room ?? "N/A"
+            let teacherName        = sortedGroup.first?.teacherInfo?.name ?? "Unknown"
+            let teacherDesignation = sortedGroup.first?.teacherInfo?.designation ?? "Unknown"
+            let teacherEmail       = sortedGroup.first?.teacherInfo?.email ?? "N/A"
+            let teacherCell        = sortedGroup.first?.teacherInfo?.cell ?? "N/A"
+            let teacherRoom        = sortedGroup.first?.teacherInfo?.teacherRoom ?? "N/A"
+            let techerImageUrl     = sortedGroup.first?.teacherInfo?.imageUrl ?? ""
+
             
             let mergedRoutine = MergedRoutine(
                 startTime: startTime,
                 endTime: endTime,
                 courseTitle: courseTitle,
-                courseCode: key.courseCode,
+                courseCode: courseCode,
                 section: section,
-                teacherInitial: key.teacherInitial,
+                teacherInitial: teacherInitial,
+                teacherName: teacherName,
+                teacherDesignation: teacherDesignation,
+                teacherRoom: teacherRoom,
+                teacherCell: teacherCell,
+                teacherEmail: teacherEmail,
+                teacherImageUrl: techerImageUrl,
                 room: room,
                 routines: sortedGroup
             )
@@ -155,7 +170,6 @@ struct StudentView: View {
             return idx1 < idx2
         }
     }
-
     
     private var totalWeeklyDurationForSection: String {
         guard !searchText.isEmpty else { return "0h 0m" }
@@ -180,30 +194,6 @@ struct StudentView: View {
         } else {
             return "\(minutes)m"
         }
-    }
-    
-    func calculateDurationMinutes(from startTime: String, to endTime: String) -> Int {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "hh:mm"
-        
-        func normalize(_ time: String) -> Int? {
-            guard let date = formatter.date(from: time) else { return nil }
-            let calendar = Calendar.current
-            var hour = calendar.component(.hour, from: date)
-            let minute = calendar.component(.minute, from: date)
-            
-            if hour < 8 {
-                hour += 12
-            }
-            return hour * 60 + minute
-        }
-        
-        guard let start = normalize(startTime),
-              let end = normalize(endTime) else {
-            return 0
-        }
-        
-        return max(0, end - start)
     }
     
     private var uniqueTeachersForSection: [TeacherInfo] {
@@ -263,6 +253,7 @@ struct StudentView: View {
         return totalClasses
     }
     
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -270,11 +261,11 @@ struct StudentView: View {
                     CalendarHeaderView2(selectedDate: $selectedDate)
                 }
                 
-                RoutinePageView(
+                StudentClasses(
                     selectedDate: selectedDate,
                     mergedRoutines: mergedRoutines,
                     hasSearchText: !searchText.isEmpty,
-                    isValidSection: isValidSection
+                    isValidSection: isValidSection,
                 )
             }
             .searchable(text: $searchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Section (61_N)")
@@ -283,8 +274,9 @@ struct StudentView: View {
                     searchText.isEmpty || section.localizedCaseInsensitiveContains(searchText)
                 }, id: \.self) { section in
                     HStack {
-                        Text(section).searchCompletion(section)
+                        Text(section).searchCompletion(section).foregroundStyle(.primary)
                         Spacer()
+                        Image(systemName: "arrow.up.left")
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -294,16 +286,16 @@ struct StudentView: View {
                 }
             }
             .sheet(isPresented: $insightSheet) {
-                ScrollView(showsIndicators: false) {
                     StudentInsight(
+                        searchedSection: searchText,
                         totalCoursesEnrolled: uniqueCoursesForSection.count,
                         totalWeeklyClasses: totalWeeklyClasses,
                         totalWeeklyHours: totalWeeklyDurationForSection,
                         courses: uniqueCoursesForSection,
                         teachers: uniqueTeachersForSection
                     )
-                }
-                .padding()
+
+                .navigationTransition(.zoom(sourceID: "Insights", in: animation))
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
             }
@@ -325,9 +317,11 @@ struct StudentView: View {
                         Button(action: {
                             insightSheet = true
                         }, label: {
-                            Text(searchText).font(.caption.bold())
+                            Text(searchText).font(.callout.bold())
                         })
+                        .contentShape(Rectangle())
                     }
+                    .matchedTransitionSource(id: "Insights", in: animation)
                 }
                 
                 ToolbarItem(placement: .title) {
@@ -335,12 +329,9 @@ struct StudentView: View {
                 }
                 
                 ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                            // Settings action
-                    } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .foregroundColor(.primary)
-                    }
+                    Button("Settings", systemImage: "line.3.horizontal.decrease") {
+                        
+                    }.tint(.primary).contentShape(Rectangle())
                 }
             }
         }
@@ -351,221 +342,7 @@ struct StudentView: View {
     }
 }
 
-struct MergedRoutine: Identifiable {
-    let id = UUID()
-    let startTime: String
-    var endTime: String
-    let courseTitle: String
-    let courseCode: String
-    let section: String
-    let teacherInitial: String
-    let room: String
-    var routines: [RoutineDO]
-    
-    var duration: String {
-        return calculateDuration(from: startTime, to: endTime)
-    }
-}
 
-struct RoutinePageView: View {
-    let selectedDate: Date?
-    let mergedRoutines: [MergedRoutine]
-    let hasSearchText: Bool
-    let isValidSection: Bool
-    
-    @Namespace private var topID
-    
-    var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    Color.clear
-                        .frame(height: 0)
-                        .id(topID)
-                    
-                    contentView
-                        .padding()
-                }
-                .padding(.bottom, 120)
-            }
-            .onChange(of: selectedDate) { _, _ in
-                scrollToTop(proxy: proxy)
-            }
-        }
-    }
-    
-    @ViewBuilder
-    private var contentView: some View {
-        if mergedRoutines.isEmpty {
-            emptyStateView
-        } else {
-            routinesList
-        }
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: getEmptyStateIcon())
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            
-            Text(getEmptyStateText())
-                .font(.title3)
-                .fontWeight(.medium)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 100)
-    }
-    
-    private func getEmptyStateIcon() -> String {
-        if !hasSearchText {
-            return "calendar.badge.clock"
-        } else if !isValidSection {
-            return "exclamationmark.magnifyingglass"
-        } else {
-            return "magnifyingglass"
-        }
-    }
-    
-    private func getEmptyStateText() -> String {
-        if !hasSearchText {
-            return "Search by section to view classes"
-        } else if !isValidSection {
-            return "Invalid section. Please enter a valid section."
-        } else {
-            return "No class found"
-        }
-    }
-    
-    private var routinesList: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(mergedRoutines) { mergedRoutine in
-                StudentCard(mergedRoutine: mergedRoutine)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
-            }
-        }
-    }
-    
-    private func scrollToTop(proxy: ScrollViewProxy) {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-            proxy.scrollTo(topID, anchor: .top)
-        }
-    }
-}
-
-struct StudentCard: View {
-    let mergedRoutine: MergedRoutine
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .center) {
-                Text("\(format12Hour(mergedRoutine.startTime)) - \(format12Hour(mergedRoutine.endTime))")
-                    .font(.system(size: 20))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.teal.opacity(0.9))
-                    .brightness(-0.2)
-                
-                Spacer()
-                
-                Text(mergedRoutine.duration)
-                    .font(.system(size: 14))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(.secondary.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 6))
-            }
-            
-            OverflowingText(text: "\(mergedRoutine.courseTitle) - \(mergedRoutine.courseCode)")
-            
-            HStack {
-                HStack(alignment: .center, spacing: 10) {
-                    Text("Section:")
-                        .font(.system(size: 16))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                    
-                    Text(mergedRoutine.section)
-                        .font(.system(size: 16))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.primary)
-                }
-                
-                Spacer()
-                
-                HStack(alignment: .center, spacing: 20) {
-                    Text("Teacher:")
-                        .font(.system(size: 16))
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.secondary)
-                    
-                    Button(action: {
-                            // Teacher info action
-                    }) {
-                        Text(mergedRoutine.teacherInitial)
-                            .font(.system(size: 16))
-                            .fontWeight(.bold)
-                            .foregroundStyle(.teal.opacity(0.9))
-                            .brightness(-0.2)
-                    }
-                    .buttonStyle(.plain)
-                    .contentShape(Rectangle())
-                }
-            }
-            
-            HStack(alignment: .center, spacing: 10) {
-                Text("Room:")
-                    .font(.system(size: 16))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.secondary)
-                
-                Text(mergedRoutine.room)
-                    .lineLimit(1)
-                    .font(.system(size: 16))
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.primary)
-            }
-        }
-        .lineLimit(1)
-        .padding()
-        .background(.secondary.opacity(0.2))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-struct OverflowingText: View {
-    let text: String
-    @State private var isOverflowing = false
-    
-    var body: some View {
-        GeometryReader { geo in
-            ScrollView(.horizontal, showsIndicators: false) {
-                Text(text)
-                    .font(.system(size: 20))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.primary)
-                    .padding([.top, .bottom], 6)
-                    .lineLimit(1)
-                    .brightness(-0.2)
-                    .background(
-                        GeometryReader { textGeo in
-                            Color.clear
-                                .onAppear {
-                                    if textGeo.size.width > geo.size.width {
-                                        isOverflowing = true
-                                    }
-                                }
-                        }
-                    )
-            }
-            .disabled(!isOverflowing)
-        }
-        .frame(height: 36)
-    }
-}
 
 func format12Hour(_ time: String) -> String {
     let formatter = DateFormatter()
@@ -620,244 +397,32 @@ func calculateDuration(from startTime: String, to endTime: String) -> String {
     }
 }
 
+func calculateDurationMinutes(from startTime: String, to endTime: String) -> Int {
+    let formatter = DateFormatter()
+    formatter.dateFormat = "hh:mm"
+    
+    func normalize(_ time: String) -> Int? {
+        guard let date = formatter.date(from: time) else { return nil }
+        let calendar = Calendar.current
+        var hour = calendar.component(.hour, from: date)
+        let minute = calendar.component(.minute, from: date)
+        
+        if hour < 8 {
+            hour += 12
+        }
+        return hour * 60 + minute
+    }
+    
+    guard let start = normalize(startTime),
+          let end = normalize(endTime) else {
+        return 0
+    }
+    
+    return max(0, end - start)
+}
+
 #Preview("Student View") {
     NavigationView {
         StudentView(isSearchActive: .constant(false))
-    }
-}
-
-struct TeacherInfo: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let initial: String
-    let imageUrl: String
-    let designation: String
-}
-
-struct StudentInsight: View {
-    let totalCoursesEnrolled: Int
-    let totalWeeklyClasses: Int
-    let totalWeeklyHours: String
-    let courses: [(title: String, code: String)]
-    let teachers: [TeacherInfo]
-    
-    init(
-        totalCoursesEnrolled: Int = 0,
-        totalWeeklyClasses: Int = 0,
-        totalWeeklyHours: String = "0h 0m",
-        courses: [(title: String, code: String)],
-        teachers: [TeacherInfo]
-    ) {
-        self.totalCoursesEnrolled = totalCoursesEnrolled
-        self.totalWeeklyClasses = totalWeeklyClasses
-        self.totalWeeklyHours = totalWeeklyHours
-        self.courses = courses
-        self.teachers = teachers
-    }
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Section: ")
-                            .font(.headline.bold())
-                            .foregroundStyle(.secondary)
-                        
-                        Text("61_N")
-                            .font(.headline.bold())
-                            .foregroundStyle(.primary.opacity(0.8))
-                    }
-                    
-                    HStack {
-                        Text("Routine Version: ")
-                            .font(.headline.bold())
-                            .foregroundStyle(.secondary)
-                        Text("2.0")
-                            .font(.headline.bold())
-                            .foregroundStyle(.primary.opacity(0.8))
-                    }
-                }
-                
-                Spacer()
-                
-                ZStack(alignment: .center) {
-                    Button(action: {
-                            // Download PDF
-                    }) {
-                        ZStack(alignment: .center) {
-                            RoundedRectangle(cornerRadius: 15)
-                                .fill(.teal.opacity(0.1))
-                                .frame(height: 60)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .stroke(.gray.opacity(0.45), lineWidth: 1)
-                                )
-                            
-                            VStack(alignment: .center, spacing: 4) {
-                                Image(systemName: "arrow.down.app.fill")
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.teal)
-                                    .brightness(-0.1)
-                                
-                                Text("PDF")
-                                    .lineLimit(1)
-                                    .multilineTextAlignment(.center)
-                                    .font(.system(size: 10))
-                                    .foregroundStyle(.teal)
-                                    .fontWeight(.bold)
-                                    .brightness(-0.1)
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: 70)
-            }
-            
-            Divider()
-                .frame(height: 1)
-                .background(.gray.opacity(0.45))
-                .padding(.vertical)
-            
-            VStack(alignment: .leading, spacing: 16) {
-                Text("Teachers")
-                    .font(.system(size: 20))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.teal.opacity(0.9))
-                    .brightness(-0.1)
-                    .padding(.bottom, 8)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                ForEach(teachers) { teacher in
-                    HStack(spacing: 12) {
-                        AsyncImage(url: URL(string: teacher.imageUrl)) { phase in
-                            if let image = phase.image {
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: 50, height: 50)
-                                    .clipShape(Circle())
-                            } else {
-                                Circle()
-                                    .fill(.gray.opacity(0.3))
-                                    .frame(width: 50, height: 50)
-                                    .overlay(Image(systemName: "person.fill").foregroundStyle(.secondary))
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(teacher.name) - \(teacher.initial)")
-                                .font(.headline)
-                                .foregroundStyle(.primary)
-                            Text(teacher.designation)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                }
-            }
-            
-            Divider()
-                .frame(height: 1)
-                .background(.gray.opacity(0.45))
-                .padding(.vertical)
-            
-            VStack(spacing: 8) {
-                Text("Enrolled Course")
-                    .font(.system(size: 20))
-                    .fontWeight(.bold)
-                    .foregroundStyle(.teal.opacity(0.9))
-                    .brightness(-0.1)
-                    .padding(.bottom, 16)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                
-                ForEach(courses, id: \.code) { course in
-                    HStack(alignment: .center) {
-                        Text(course.title)
-                            .font(.system(size: 16))
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text(course.code)
-                            .font(.system(size: 16))
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.primary.opacity(0.8))
-                    }
-                }
-            }
-            
-            Divider()
-                .frame(height: 1)
-                .background(.gray.opacity(0.45))
-                .padding(.vertical)
-            
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12),
-                GridItem(.flexible(), spacing: 12),
-            ], spacing: 16) {
-                
-                ZStack(alignment: .center) {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.clear)
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(.gray.opacity(0.45), lineWidth: 1)
-                        )
-                    
-                    Text("Total Course Enrolled: \(totalCoursesEnrolled)")
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.8))
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 8)
-                        .lineSpacing(4)
-                }
-                
-                ZStack(alignment: .center) {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.clear)
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(.gray.opacity(0.45), lineWidth: 1)
-                        )
-                    
-                    Text("Total Weekly Classes: \(totalWeeklyClasses)")
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.8))
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 8)
-                        .lineSpacing(4)
-                }
-                
-                ZStack(alignment: .center) {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.clear)
-                        .frame(height: 80)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 15)
-                                .stroke(.gray.opacity(0.45), lineWidth: 1)
-                        )
-                    
-                    Text("Weekly Class Hours: \(totalWeeklyHours)")
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 12))
-                        .foregroundStyle(.primary.opacity(0.8))
-                        .fontWeight(.bold)
-                        .padding(.horizontal, 8)
-                        .lineSpacing(4)
-                }
-            }
-            .padding(.bottom, 8)
-        }
-        .lineLimit(1)
-        .padding(15)
     }
 }

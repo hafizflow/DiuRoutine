@@ -74,14 +74,16 @@ class TeacherInfoDO {
     var cell: String?
     var email: String?
     var imageUrl: String?
+    var teacherRoom: String?
     
-    init(initial: String?, name: String?, designation: String?, cell: String?, email: String?, imageUrl: String?) {
+    init(initial: String?, name: String?, designation: String?, cell: String?, email: String?, imageUrl: String?, teacherRoom: String?) {
         self.initial = initial
         self.name = name
         self.designation = designation
         self.cell = cell
         self.email = email
         self.imageUrl = imageUrl
+        self.teacherRoom = teacherRoom
     }
     
     convenience init(dto: TeacherInfoDTO) {
@@ -91,7 +93,8 @@ class TeacherInfoDO {
             designation: dto.designation,
             cell: dto.cell,
             email: dto.email,
-            imageUrl: dto.imageUrl
+            imageUrl: dto.imageUrl,
+            teacherRoom: dto.teacherRoom,
         )
     }
 }

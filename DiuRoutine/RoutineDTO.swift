@@ -30,6 +30,7 @@ struct TeacherInfoDTO: Decodable {
     let cell: String?
     let email: String?
     let imageUrl: String?
+    let teacherRoom: String?
 }
 
 

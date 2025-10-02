@@ -5,7 +5,7 @@ struct CalendarHeaderView2: View {
     
     var body: some View {
         WeekView2(selectedDate: $selectedDate)
-            .padding(.bottom, 20)
+            .padding(.bottom, 24)
             .padding(.top, 6)
     }
 }
@@ -56,6 +56,7 @@ struct WeekView2: View {
                 
                     // Show DatePicker Button
                 Button(action: {
+                    impactFeedback.impactOccurred()
                     showDatePicker = true
                 }) {
                     HStack(spacing: 0) {

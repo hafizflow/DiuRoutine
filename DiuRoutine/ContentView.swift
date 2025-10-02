@@ -1,7 +1,7 @@
 import SwiftUI
 
     // Tab Items!
-enum CustomTab: String, CaseIterable {
+enum CustomTab: String, CaseIterable, Hashable {
     case student = "Student"
     case faculty = "Faculty"
     case emptyRoom = "EmptyRoom"
@@ -72,6 +72,7 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UISegmentedControl, context: Context) {
+        uiView.selectedSegmentIndex = activeTab.index
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UISegmentedControl, context: Context) -> CGSize? {
@@ -102,45 +103,67 @@ extension View {
 }
 
 struct ContentView: View {
-    @State private var activeTab: CustomTab = .student
+        // Store the raw value (String) in AppStorage
+    @AppStorage("lastSelectedTab") private var lastSelectedTabRawValue: String = CustomTab.student.rawValue
     @Environment(\.modelContext) private var modelContext
     @Environment(\.colorScheme) private var colorScheme
     @State private var versionStore = RoutineVersionStore()
-    @State private var isSearchActive: Bool = false
+    @State private var isSectionSearchActive: Bool = false
+    @State private var isTeacherSearchActive: Bool = false
     private let webService = WebService()
+    
+        // State variable for the actual tab
+    @State private var activeTab: CustomTab = .student
     
     var body: some View {
         TabView(selection: $activeTab) {
-            Tab.init(value: .emptyRoom) {
-                StudentView(isSearchActive: $isSearchActive)
+            Tab(value: .student) {
+                StudentView(isSearchActive: $isSectionSearchActive)
                     .safeAreaBar(edge: .bottom, spacing: 0, content: {
-                        Text(".").blendMode(.destinationOver)
+                        Text(".")
+                            .foregroundStyle(colorScheme == .light ? .white : .black)
+                            .blendMode(.destinationOver)
                     })
                     .toolbarVisibility(.hidden, for: .tabBar)
             }
             
-            Tab.init(value: .faculty) {
-                TeacherView()
+            Tab(value: .faculty) {
+                TeacherView(isSearchActive: $isTeacherSearchActive)
                     .safeAreaBar(edge: .bottom, spacing: 0, content: {
-                        Text(".").blendMode(.destinationOver)
+                        Text(".")
+                            .foregroundStyle(colorScheme == .light ? .white : .black)
+                            .blendMode(.destinationOver)
                     })
                     .toolbarVisibility(.hidden, for: .tabBar)
             }
             
-            Tab.init(value: .emptyRoom) {
+            Tab(value: .emptyRoom) {
                 Text("EmptyRoom")
+                    .safeAreaBar(edge: .bottom, spacing: 0, content: {
+                        Text(".")
+                            .foregroundStyle(colorScheme == .light ? .white : .black)
+                            .blendMode(.destinationOver)
+                    })
                     .toolbarVisibility(.hidden, for: .tabBar)
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
             CustomTabBarView()
                 .padding(.horizontal, 20)
-                .padding(.bottom, 24)
+                .padding(.bottom, 32)
         }
         .ignoresSafeArea(.all, edges: .bottom)
         .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))
         .task {
             await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+        }
+        .onAppear {
+            if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
+                activeTab = savedTab
+            }
+        }
+        .onChange(of: activeTab) { oldValue, newValue in
+            lastSelectedTabRawValue = newValue.rawValue
         }
     }
     
@@ -148,8 +171,8 @@ struct ContentView: View {
     func CustomTabBarView() -> some View {
         HStack(spacing: 10) {
             GlassEffectContainer(spacing: 10) {
-                GeometryReader {
-                    CustomTabBar(size: $0.size, activeTab: $activeTab) { tab in
+                GeometryReader { geometry in
+                    CustomTabBar(size: geometry.size, activeTab: $activeTab) { tab in
                         VStack(spacing: 3) {
                             Image(systemName: tab.symbol)
                                 .font(.title3)
@@ -167,7 +190,9 @@ struct ContentView: View {
                     ForEach(CustomTab.allCases, id: \.rawValue) { tab in
                         Button {
                             if activeTab == .student {
-                                isSearchActive.toggle()
+                                isSectionSearchActive.toggle()
+                            } else if activeTab == .faculty {
+                                isTeacherSearchActive.toggle()
                             }
                         } label: {
                             Image(systemName: tab.actionSymbol)
@@ -175,9 +200,10 @@ struct ContentView: View {
                                 .blurFade(activeTab == tab)
                         }
                         .foregroundStyle(.primary)
+                        .frame(width: 60, height: 60)
+                        .contentShape(Rectangle())
                     }
                 }
-                .frame(width: 60, height: 60)
                 .glassEffect(.regular.interactive(), in: .capsule)
                 .animation(.smooth(duration: 0.55, extraBounce: 0), value: activeTab)
             }

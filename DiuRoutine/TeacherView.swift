@@ -1,276 +1,427 @@
 import SwiftUI
+import SwiftData
+import Toast
 
-    // MARK: - Teacher View with Calendar
 struct TeacherView: View {
-    @State private var selectedDate: Date? = .now
-    
-    
+    @State private var selectedDate: Date = Date()
     @State private var searchText: String = ""
+    @State private var insightSheet: Bool = false
+    @Binding var isSearchActive: Bool
+    @Namespace private var animation
+    
+    @Query private var routines: [RoutineDO]
+    
+    private var allTeachers: [(name: String, initial: String)] {
+        var seenInitials = Set<String>()
+        var teachers: [(name: String, initial: String)] = []
+        
+        for routine in routines {
+            let initial = routine.teacherInfo?.initial ?? routine.initial ?? "N/A"
+            
+                // Only add if we haven't seen this initial before
+            if !seenInitials.contains(initial) {
+                seenInitials.insert(initial)
+                let name = routine.teacherInfo?.name ?? "Unknown"
+                teachers.append((name, initial))
+            }
+        }
+        return teachers.sorted { $0.name < $1.name }
+    }
+    
+    private var isValidTeacher: Bool {
+        guard !searchText.isEmpty else { return false }
+        return allTeachers.contains { teacher in
+            teacher.name.caseInsensitiveCompare(searchText) == .orderedSame ||
+            teacher.initial.caseInsensitiveCompare(searchText) == .orderedSame
+        }
+    }
+    
+    private var filteredRoutines: [RoutineDO] {
+        guard !searchText.isEmpty else { return [] }
+        guard isValidTeacher else { return [] }
+        
+        var filtered = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedStandardContains(searchText)
+        }
+        
+        let dayFormatter = DateFormatter()
+        dayFormatter.dateFormat = "EEEE"
+        let selectedDay = dayFormatter.string(from: selectedDate)
+        
+        filtered = filtered.filter { routine in
+            guard let routineDay = routine.day else { return false }
+            return routineDay.localizedCaseInsensitiveContains(selectedDay)
+        }
+        
+        let sorted = filtered.sorted { routine1, routine2 in
+            guard let start1 = routine1.startTime, let start2 = routine2.startTime else {
+                return false
+            }
+            return start1 < start2
+        }
+        
+            // Print filtered routines
+//        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
+//        print("Total routines found: \(sorted.count)")
+//        for (index, routine) in sorted.enumerated() {
+//            print("\n[\(index + 1)]")
+//            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+//            print("  Section: \(routine.section ?? "N/A")")
+//            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+//            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
+//            print("  Room: \(routine.room ?? "N/A")")
+//            print("  Day: \(routine.day ?? "N/A")")
+//        }
+//        print("=====================================\n")
+        
+        return sorted
+    }
+    
+    private struct RoutineGroupKey: Hashable {
+        let section: String
+        let courseCode: String
+    }
+    
+    private let timeOrder = ["08:30", "10:00", "11:30", "01:00", "02:30", "04:00"]
+    
+    private var mergedRoutines: [MergedRoutine] {
+        let routinesForDay = filteredRoutines
+        
+        let grouped = Dictionary(grouping: routinesForDay) { routine in
+            RoutineGroupKey(
+                section: routine.section ?? "N/A",
+                courseCode: routine.courseInfo?.code ?? "N/A"
+            )
+        }
+        
+        var merged: [MergedRoutine] = []
+        
+        for (key, group) in grouped {
+            let sortedGroup = group.sorted { lhs, rhs in
+                guard
+                    let idx1 = timeOrder.firstIndex(of: lhs.startTime ?? ""),
+                    let idx2 = timeOrder.firstIndex(of: rhs.startTime ?? "")
+                else {
+                    return (lhs.startTime ?? "") < (rhs.startTime ?? "")
+                }
+                return idx1 < idx2
+            }
+            
+            let startTime = sortedGroup.first?.startTime ?? "N/A"
+            let endTime   = sortedGroup.last?.endTime ?? "N/A"
+            let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown"
+            let courseCode = key.courseCode
+            let teacherInitial = sortedGroup.first?.teacherInfo?.initial ?? sortedGroup.first?.initial ?? "N/A"
+            let section     = key.section
+            let room        = sortedGroup.first?.room ?? "N/A"
+            let teacherName        = sortedGroup.first?.teacherInfo?.name ?? "Unknown"
+            let teacherDesignation = sortedGroup.first?.teacherInfo?.designation ?? "Unknown"
+            let teacherEmail       = sortedGroup.first?.teacherInfo?.email ?? "N/A"
+            let teacherCell        = sortedGroup.first?.teacherInfo?.cell ?? "N/A"
+            let teacherRoom        = sortedGroup.first?.teacherInfo?.teacherRoom ?? "N/A"
+            let techerImageUrl     = sortedGroup.first?.teacherInfo?.imageUrl ?? ""
+            
+            let mergedRoutine = MergedRoutine(
+                startTime: startTime,
+                endTime: endTime,
+                courseTitle: courseTitle,
+                courseCode: courseCode,
+                section: section,
+                teacherInitial: teacherInitial,
+                teacherName: teacherName,
+                teacherDesignation: teacherDesignation,
+                teacherRoom: teacherRoom,
+                teacherCell: teacherCell,
+                teacherEmail: teacherEmail,
+                teacherImageUrl: techerImageUrl,
+                room: room,
+                routines: sortedGroup
+            )
+            
+            merged.append(mergedRoutine)
+        }
+        
+        return merged.sorted {
+            guard let idx1 = timeOrder.firstIndex(of: $0.startTime),
+                  let idx2 = timeOrder.firstIndex(of: $1.startTime) else {
+                return $0.startTime < $1.startTime
+            }
+            return idx1 < idx2
+        }
+    }
+    
+    private var uniqueCoursesForTeacher: [(title: String, code: String)] {
+        guard !searchText.isEmpty else { return [] }
+        
+        let routinesForTeacher = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        var seen = Set<String>()
+        var uniqueCourses: [(title: String, code: String)] = []
+        
+        for routine in routinesForTeacher {
+            let code = routine.courseInfo?.code ?? "N/A"
+            if !seen.contains(code) {
+                seen.insert(code)
+                let title = routine.courseInfo?.title ?? "Unknown Course"
+                uniqueCourses.append((title: title, code: code))
+            }
+        }
+        
+        return uniqueCourses
+    }
+    
+    private var totalWeeklyDurationForTeacher: String {
+        guard !searchText.isEmpty else { return "0h 0m" }
+        
+        let routinesForSection = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        let totalMinutes = routinesForSection.reduce(0) { partial, routine in
+            guard let s = routine.startTime, let e = routine.endTime else { return partial }
+            return partial + calculateDurationMinutes(from: s, to: e)
+        }
+        
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        
+        if hours > 0 && minutes > 0 {
+            return "\(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h"
+        } else {
+            return "\(minutes)m"
+        }
+    }
+    
+    private var totalWeeklyClasses: Int {
+        guard !searchText.isEmpty else { return 0 }
+        
+        
+        let routinesForTeacher = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        let groupedByDay = Dictionary(grouping: routinesForTeacher) { routine in
+            routine.day ?? "Unknown"
+        }
+        
+        var totalClasses = 0
+        for (_, routinesInDay) in groupedByDay {
+            let mergedForDay = Dictionary(grouping: routinesInDay) { routine in
+                RoutineGroupKey(
+                    section: routine.section ?? "N/A",
+                    courseCode: routine.courseInfo?.code ?? "N/A"
+                )
+            }
+            totalClasses += mergedForDay.count
+        }
+        
+        return totalClasses
+    }
+    
+    private var uniqueSectionsForTeacher: [String] {
+        guard !searchText.isEmpty else { return [] }
+        
+        let routinesForTeacher = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedCaseInsensitiveContains(searchText)
+        }
+        
+        var seen = Set<String>()
+        var sections: [String] = []
+        
+        for routine in routinesForTeacher {
+            let section = routine.section ?? "N/A"
+            if !seen.contains(section) {
+                seen.insert(section)
+                sections.append(section)
+            }
+        }
+        
+            // Extract main sections (e.g., "61_N" from "61_N1", "61_N2")
+        var mainSections = Set<String>()
+        
+        for section in sections {
+                // Check if section ends with a digit (e.g., "61_N1", "61_N2")
+            if let lastChar = section.last, lastChar.isNumber {
+                    // Remove the last digit to get main section
+                let mainSection = String(section.dropLast())
+                mainSections.insert(mainSection)
+            } else {
+                    // It's already a main section
+                mainSections.insert(section)
+            }
+        }
+        
+            // Filter: only include main sections that actually exist in the original list
+            // OR include subsections if their main section doesn't exist
+        var result: [String] = []
+        
+        for mainSection in mainSections {
+            if sections.contains(mainSection) {
+                    // Main section exists, add it
+                result.append(mainSection)
+            } else {
+                    // Main section doesn't exist, add all subsections for this main
+                let subsections = sections.filter { $0.hasPrefix(mainSection) && $0 != mainSection }
+                result.append(contentsOf: subsections)
+            }
+        }
+        
+        return result.sorted()
+    }
+
+
+    private var teacherInfo: TeacherData {
+        guard !searchText.isEmpty, isValidTeacher else {
+            return TeacherData(
+                name: "Unknown",
+                initial: "N/A",
+                designation: "N/A",
+                phone: "N/A",
+                email: "N/A",
+                room: "N/A",
+                imageUrl: ""
+            )
+        }
+        
+            // Find routine
+        if let firstRoutine = routines.first(where: { routine in
+            guard let initial = routine.teacherInfo?.initial else { return false }
+            return initial.localizedCaseInsensitiveContains(searchText)
+        }) {
+            return TeacherData(
+                name: firstRoutine.teacherInfo?.name ?? "Unknown",
+                initial: firstRoutine.teacherInfo?.initial ?? firstRoutine.initial ?? "N/A",
+                designation: firstRoutine.teacherInfo?.designation ?? "N/A",
+                phone: firstRoutine.teacherInfo?.cell ?? "N/A",
+                email: firstRoutine.teacherInfo?.email ?? "N/A",
+                room: firstRoutine.teacherInfo?.teacherRoom ?? "N/A",
+                imageUrl: firstRoutine.teacherInfo?.imageUrl ?? ""
+            )
+        }
+        
+            // Fallback
+        return TeacherData(
+            name: "Unknown",
+            initial: "N/A",
+            designation: "N/A",
+            phone: "N/A",
+            email: "N/A",
+            room: "N/A",
+            imageUrl: ""
+        )
+    }
+
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                    // Calendar header
-                CalendarHeaderView(selectedDate: $selectedDate)
-                    .background(Color(.systemBackground))
-                    .zIndex(1)
-                    // Teacher content
-                ScrollView {
-                    VStack(spacing: 16) {
-                        TeacherScheduleCard(selectedDate: selectedDate)
-                        TeacherClassesCard()
-                        TeacherStudentsCard()
-                    }
-                    .padding()
+                if isValidTeacher {
+                    CalendarHeaderView2(selectedDate: $selectedDate)
                 }
-                .background(Color(.systemGroupedBackground))
+                
+                TeacherClasses(
+                    selectedDate: selectedDate,
+                    mergedRoutines: mergedRoutines,
+                    hasSearchText: !searchText.isEmpty,
+                    isValidTeacher: isValidTeacher
+                )
+            }
+            .searchable(text: $searchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Teacher (Name/Initial)")
+            .searchSuggestions {
+                ForEach(allTeachers.filter { teacher in
+                    searchText.isEmpty ||
+                    teacher.name.localizedCaseInsensitiveContains(searchText) ||
+                    teacher.initial.localizedCaseInsensitiveContains(searchText)
+                }, id: \.initial) { teacher in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(teacher.name)
+                                .foregroundStyle(.primary)
+                            Text(teacher.initial)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "arrow.up.left")
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        searchText = teacher.initial
+                        isSearchActive = false
+                    }
+                }
+            }
+            .sheet(isPresented: $insightSheet) {
+                    TeacherInsights(
+                        searchedTeacher: searchText,
+                        sections: uniqueSectionsForTeacher,
+                        totalCoursesEnrolled: uniqueCoursesForTeacher.count,
+                        totalWeeklyClasses: totalWeeklyClasses,
+                        totalWeeklyHours: totalWeeklyDurationForTeacher,
+                        courses: uniqueCoursesForTeacher,
+                        teacher: teacherInfo
+                    )
+                    .navigationTransition(.zoom(sourceID: "Insights", in: animation))
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    if isSearchActive {
+                        Button(action: {
+                            isSearchActive = false
+                        }, label: {
+                            Text("Done")
+                        })
+                    }
+                }
+                
+                if isValidTeacher {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: {
+                            insightSheet = true
+                        }, label: {
+                            Text(searchText).font(.callout.bold())
+                        })
+                        .contentShape(Rectangle())
+                    }
+                    .matchedTransitionSource(id: "Insights", in: animation)
+                }
+                
                 ToolbarItem(placement: .title) {
                     Text("Teacher").font(.title.bold())
                 }
                 
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                            // Settings action
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundColor(.primary)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Settings", systemImage: "line.3.horizontal.decrease") {
+                        
                     }
+                    .tint(.primary)
+                    .contentShape(Rectangle())
                 }
             }
-            .searchable(text: $searchText, prompt: "Hello")
         }
-        
+        .contentShape(Rectangle())
+        .onTapGesture {
+            isSearchActive = false
+        }
     }
 }
+
+
 
 
 #Preview {
-    TeacherView()
-}
-
-
-
-struct TeacherClassesCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "book.fill")
-                    .foregroundColor(.indigo)
-                Text("My Classes")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(spacing: 8) {
-                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
-                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
-                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
-                
-                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
-                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
-                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
-                
-                
-                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
-                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
-                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
-                
-                ClassItem(name: "Advanced Mathematics", grade: "Grade 12", students: 28)
-                ClassItem(name: "Algebra", grade: "Grade 10", students: 32)
-                ClassItem(name: "Calculus", grade: "Grade 11", students: 24)
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-struct TeacherStudentsCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "person.2.fill")
-                    .foregroundColor(.mint)
-                Text("Recent Activity")
-                    .font(.headline)
-                Spacer()
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("• John Doe submitted Math Assignment")
-                    .font(.subheadline)
-                Text("• Sarah Smith requested help with Physics")
-                    .font(.subheadline)
-                Text("• Mike Johnson completed Lab Report")
-                    .font(.subheadline)
-            }
-            .foregroundColor(.secondary)
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-
-
-struct TeacherScheduleCard: View {
-    let selectedDate: Date?
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "calendar")
-                    .foregroundColor(.orange)
-                Text("Teaching Schedule")
-                    .font(.headline)
-                Spacer()
-                if let date = selectedDate {
-                    Text(date, format: .dateTime.weekday(.wide).month().day())
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            VStack(alignment: .leading, spacing: 8) {
-                ScheduleItem(time: "8:00 AM", subject: "Advanced Math - Grade 12", room: "Room 201")
-                ScheduleItem(time: "10:00 AM", subject: "Algebra - Grade 10", room: "Room 201")
-                ScheduleItem(time: "1:00 PM", subject: "Calculus - Grade 11", room: "Room 201")
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-
-
-
-struct ScheduleItem: View {
-    let time: String
-    let subject: String
-    let room: String
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(time)
-                    .font(.caption.bold())
-                    .foregroundColor(.primary)
-                Text(room)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .frame(width: 80, alignment: .leading)
-            
-            Text(subject)
-                .font(.subheadline)
-                .foregroundColor(.primary)
-            
-            Spacer()
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct AssignmentItem: View {
-    let title: String
-    let dueDate: String
-    let status: AssignmentStatus
-    
-    enum AssignmentStatus {
-        case pending, completed, overdue
-        
-        var color: Color {
-            switch self {
-                case .pending: return .orange
-                case .completed: return .green
-                case .overdue: return .red
-            }
-        }
-        
-        var text: String {
-            switch self {
-                case .pending: return "Pending"
-                case .completed: return "Completed"
-                case .overdue: return "Overdue"
-            }
-        }
-    }
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(title)
-                    .font(.subheadline)
-                Text("Due: \(dueDate)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Text(status.text)
-                .font(.caption.bold())
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(status.color.opacity(0.2))
-                .foregroundColor(status.color)
-                .clipShape(Capsule())
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct ClassItem: View {
-    let name: String
-    let grade: String
-    let students: Int
-    
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(name)
-                    .font(.subheadline.bold())
-                Text(grade)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Text("\(students) students")
-                .font(.caption)
-                .foregroundColor(.secondary)
-        }
-        .padding(.vertical, 4)
-    }
-}
-
-struct GradeItem: View {
-    let subject: String
-    let grade: String
-    let percentage: String
-    
-    var body: some View {
-        HStack {
-            Text(subject)
-                .font(.subheadline)
-            
-            Spacer()
-            
-            VStack(alignment: .trailing) {
-                Text(grade)
-                    .font(.subheadline.bold())
-                Text(percentage)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding(.vertical, 4)
-    }
+    TeacherView(isSearchActive: .constant(false))
 }
