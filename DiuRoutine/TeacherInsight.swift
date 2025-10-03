@@ -186,7 +186,8 @@ struct TeacherInsights: View {
                                         Link(teacherPhone, destination: URL(string: "tel:\(teacherPhone)")!)
                                             .font(.system(size: 16))
                                             .fontWeight(.semibold)
-                                            .foregroundStyle(.teal.opacity(0.7))
+                                            .foregroundStyle(.teal.opacity(0.9))
+                                            .brightness(-0.2)
                                     } else {
                                         Text(teacherPhone)
                                             .font(.system(size: 16))
@@ -203,7 +204,8 @@ struct TeacherInsights: View {
                                             impactFeedback.impactOccurred()
                                         }) {
                                             Image(systemName: "square.on.square")
-                                                .foregroundColor(.teal.opacity(0.7))
+                                                .foregroundStyle(.teal.opacity(0.9))
+                                                .brightness(-0.2)
                                                 .font(.system(size: 16))
                                         }
                                     }
@@ -239,7 +241,8 @@ struct TeacherInsights: View {
                                     impactFeedback.impactOccurred()
                                 }) {
                                     Image(systemName: "square.on.square")
-                                        .foregroundColor(.teal.opacity(0.7))
+                                        .foregroundStyle(.teal.opacity(0.9))
+                                        .brightness(-0.2)
                                         .font(.system(size: 16))
                                 }
                             }

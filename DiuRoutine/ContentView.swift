@@ -43,10 +43,10 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         
-            /// Converting Tab Item View into an image!
+            // Converting Tab Item View into an image!
         for (index, tab) in CustomTab.allCases.enumerated() {
             let renderer = ImageRenderer(content: tabItemView(tab))
-                /// 2 is enough, but you can change it as per your wish!
+                // 2 is enough, but you can change it as per your wish!
             renderer.scale = 2
             let image = renderer.uiImage
             control.setImage(image, forSegmentAt: index)
@@ -55,7 +55,7 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
         DispatchQueue.main.async {
             for subview in control.subviews {
                 if subview is UIImageView && subview != control.subviews.last {
-                        /// It's a background Image View!
+                        // It's a background Image View!
                     subview.alpha = 0
                 }
             }
@@ -110,60 +110,77 @@ struct ContentView: View {
     @State private var versionStore = RoutineVersionStore()
     @State private var isSectionSearchActive: Bool = false
     @State private var isTeacherSearchActive: Bool = false
+    @State private var selectedTime: String? = nil
     private let webService = WebService()
     
         // State variable for the actual tab
     @State private var activeTab: CustomTab = .student
     
+        // Cached time slots to avoid recreation
+    private let timeSlots = [
+        "08:30 - 10:00",
+        "10:00 - 11:30",
+        "11:30 - 01:00",
+        "01:00 - 02:30",
+        "02:30 - 04:00",
+        "04:00 - 05:30"
+    ]
+    
     var body: some View {
-        TabView(selection: $activeTab) {
-            Tab(value: .student) {
-                StudentView(isSearchActive: $isSectionSearchActive)
-                    .safeAreaBar(edge: .bottom, spacing: 0, content: {
-                        Text(".")
-                            .foregroundStyle(colorScheme == .light ? .white : .black)
-                            .blendMode(.destinationOver)
-                    })
-                    .toolbarVisibility(.hidden, for: .tabBar)
+        Group {
+            if versionStore.inMaintenance {
+                MaintenanceView()
+            } else {
+                TabView(selection: $activeTab) {
+                    Tab(value: .student) {
+                        StudentView(isSearchActive: $isSectionSearchActive)
+                            .safeAreaBar(edge: .bottom, spacing: 0, content: {
+                                Text(".")
+                                    .foregroundStyle(colorScheme == .light ? .white : .black)
+                                    .blendMode(.destinationOver)
+                            })
+                            .toolbarVisibility(.hidden, for: .tabBar)
+                    }
+                    
+                    Tab(value: .faculty) {
+                        TeacherView(isSearchActive: $isTeacherSearchActive)
+                            .safeAreaBar(edge: .bottom, spacing: 0, content: {
+                                Text(".")
+                                    .foregroundStyle(colorScheme == .light ? .white : .black)
+                                    .blendMode(.destinationOver)
+                            })
+                            .toolbarVisibility(.hidden, for: .tabBar)
+                    }
+                    
+                    Tab(value: .emptyRoom) {
+                        EmptyRoomView(selectedTime: $selectedTime)
+                            .safeAreaBar(edge: .bottom, spacing: 0, content: {
+                                Text(".")
+                                    .foregroundStyle(colorScheme == .light ? .white : .black)
+                                    .blendMode(.destinationOver)
+                            })
+                            .toolbarVisibility(.hidden, for: .tabBar)
+                    }
+                }
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    CustomTabBarView()
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 32)
+                }
+                .ignoresSafeArea(.all, edges: .bottom)
+                .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))
+                .task {
+                    await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+                }
+                .onAppear {
+                    if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
+                        activeTab = savedTab
+                    }
+                }
+                .onChange(of: activeTab) { oldValue, newValue in
+                    lastSelectedTabRawValue = newValue.rawValue
+                }
             }
-            
-            Tab(value: .faculty) {
-                TeacherView(isSearchActive: $isTeacherSearchActive)
-                    .safeAreaBar(edge: .bottom, spacing: 0, content: {
-                        Text(".")
-                            .foregroundStyle(colorScheme == .light ? .white : .black)
-                            .blendMode(.destinationOver)
-                    })
-                    .toolbarVisibility(.hidden, for: .tabBar)
-            }
-            
-            Tab(value: .emptyRoom) {
-                Text("EmptyRoom")
-                    .safeAreaBar(edge: .bottom, spacing: 0, content: {
-                        Text(".")
-                            .foregroundStyle(colorScheme == .light ? .white : .black)
-                            .blendMode(.destinationOver)
-                    })
-                    .toolbarVisibility(.hidden, for: .tabBar)
-            }
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            CustomTabBarView()
-                .padding(.horizontal, 20)
-                .padding(.bottom, 32)
-        }
-        .ignoresSafeArea(.all, edges: .bottom)
-        .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))
-        .task {
-            await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
-        }
-        .onAppear {
-            if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
-                activeTab = savedTab
-            }
-        }
-        .onChange(of: activeTab) { oldValue, newValue in
-            lastSelectedTabRawValue = newValue.rawValue
         }
     }
     
@@ -186,22 +203,43 @@ struct ContentView: View {
                     }
                     .glassEffect(.regular.interactive(), in: .capsule)
                 }
+                
                 ZStack {
                     ForEach(CustomTab.allCases, id: \.rawValue) { tab in
-                        Button {
-                            if activeTab == .student {
-                                isSectionSearchActive.toggle()
-                            } else if activeTab == .faculty {
-                                isTeacherSearchActive.toggle()
+                        Group {
+                            if tab == .emptyRoom {
+                                Menu {
+                                    ForEach(timeSlots, id: \.self) { time in
+                                        Button {
+                                            selectedTime = time
+                                        } label: {
+                                            Label(time, systemImage: selectedTime == time ? "checkmark" : "")
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: tab.actionSymbol)
+                                        .font(.system(size: 22, weight: .medium))
+                                }
+                                .foregroundStyle(.primary)
+                                .frame(width: 60, height: 60)
+                                .contentShape(Rectangle())
+                            } else {
+                                Button {
+                                    if tab == .student {
+                                        isSectionSearchActive.toggle()
+                                    } else if tab == .faculty {
+                                        isTeacherSearchActive.toggle()
+                                    }
+                                } label: {
+                                    Image(systemName: tab.actionSymbol)
+                                        .font(.system(size: 22, weight: .medium))
+                                }
+                                .foregroundStyle(.primary)
+                                .frame(width: 60, height: 60)
+                                .contentShape(Rectangle())
                             }
-                        } label: {
-                            Image(systemName: tab.actionSymbol)
-                                .font(.system(size: 22, weight: .medium))
-                                .blurFade(activeTab == tab)
                         }
-                        .foregroundStyle(.primary)
-                        .frame(width: 60, height: 60)
-                        .contentShape(Rectangle())
+                        .blurFade(activeTab == tab)
                     }
                 }
                 .glassEffect(.regular.interactive(), in: .capsule)

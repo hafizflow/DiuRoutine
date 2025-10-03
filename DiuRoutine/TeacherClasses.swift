@@ -1,5 +1,6 @@
 
 import SwiftUI
+import Lottie
 
 struct TeacherClasses: View {
     let selectedDate: Date?
@@ -62,38 +63,38 @@ struct TeacherClasses: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: getEmptyStateIcon())
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            
+        VStack(alignment: .center, spacing: 12) {
+            getEmptyStateAnimation()
             Text(getEmptyStateText())
                 .font(.title3)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 100)
     }
     
-    private func getEmptyStateIcon() -> String {
+    @ViewBuilder
+    private func getEmptyStateAnimation() -> some View {
         if !hasSearchText {
-            return "calendar.badge.clock"
+            LottieHelperView(fileName: "teach.json", contentMode: .scaleAspectFit, playLoopMode: .loop, speed: 0.5)
+                .frame(maxHeight: 350).padding(.top, 40)
+            
         } else if !isValidTeacher {
-            return "exclamationmark.magnifyingglass"
+            LottieHelperView(fileName: "notfound.json", contentMode: .scaleAspectFit, playLoopMode: .loop, speed: 0.5)
+                .frame(maxHeight: 350).padding(.top, 50)
         } else {
-            return "magnifyingglass"
+            LottieHelperView(fileName: "medi.json", contentMode: .scaleAspectFit, playLoopMode: .loop)
+                .frame(maxHeight: 300)
         }
     }
     
     private func getEmptyStateText() -> String {
         if !hasSearchText {
-            return "Search by teacher to view classes"
+            return "Search by inital to view routine"
         } else if !isValidTeacher {
-            return "Invalid teacher. Please enter a valid teacher."
+            return "No teacher found for that search"
         } else {
-            return "No class found"
+            return "No class Today"
         }
     }
     

@@ -1,5 +1,3 @@
- 
-
 
 struct RoutineDTOResponse: Decodable {
     let data: [RoutineDTO]
@@ -32,8 +30,6 @@ struct TeacherInfoDTO: Decodable {
     let imageUrl: String?
     let teacherRoom: String?
 }
-
-
 
 struct VersionResponse: Decodable {
     let data: Version

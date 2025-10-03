@@ -1,10 +1,24 @@
 import SwiftUI
 import SwiftData
 import Toast
+import Combine
+
+
+class TeacherRoutineStore: ObservableObject {
+    @Published var teacherRoutineSearchText: String {
+        didSet {
+            UserDefaults.standard.set(teacherRoutineSearchText, forKey: "teacherRoutineSearchText")
+        }
+    }
+    init() {
+        self.teacherRoutineSearchText = UserDefaults.standard.string(forKey: "teacherRoutineSearchText") ?? ""
+    }
+}
+
 
 struct TeacherView: View {
     @State private var selectedDate: Date = Date()
-    @State private var searchText: String = ""
+    @StateObject private var searchText = TeacherRoutineStore()
     @State private var insightSheet: Bool = false
     @Binding var isSearchActive: Bool
     @Namespace private var animation
@@ -29,20 +43,20 @@ struct TeacherView: View {
     }
     
     private var isValidTeacher: Bool {
-        guard !searchText.isEmpty else { return false }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return false }
         return allTeachers.contains { teacher in
-            teacher.name.caseInsensitiveCompare(searchText) == .orderedSame ||
-            teacher.initial.caseInsensitiveCompare(searchText) == .orderedSame
+            teacher.name.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame ||
+            teacher.initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
     }
     
     private var filteredRoutines: [RoutineDO] {
-        guard !searchText.isEmpty else { return [] }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         guard isValidTeacher else { return [] }
         
         var filtered = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedStandardContains(searchText)
+            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
         }
         
         let dayFormatter = DateFormatter()
@@ -152,11 +166,11 @@ struct TeacherView: View {
     }
     
     private var uniqueCoursesForTeacher: [(title: String, code: String)] {
-        guard !searchText.isEmpty else { return [] }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText)
+            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
         }
         
         var seen = Set<String>()
@@ -175,11 +189,11 @@ struct TeacherView: View {
     }
     
     private var totalWeeklyDurationForTeacher: String {
-        guard !searchText.isEmpty else { return "0h 0m" }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return "0h 0m" }
         
         let routinesForSection = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText)
+            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
         }
         
         let totalMinutes = routinesForSection.reduce(0) { partial, routine in
@@ -200,12 +214,12 @@ struct TeacherView: View {
     }
     
     private var totalWeeklyClasses: Int {
-        guard !searchText.isEmpty else { return 0 }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return 0 }
         
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText)
+            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
         }
         
         let groupedByDay = Dictionary(grouping: routinesForTeacher) { routine in
@@ -227,11 +241,11 @@ struct TeacherView: View {
     }
     
     private var uniqueSectionsForTeacher: [String] {
-        guard !searchText.isEmpty else { return [] }
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText)
+            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
         }
         
         var seen = Set<String>()
@@ -280,7 +294,7 @@ struct TeacherView: View {
 
 
     private var teacherInfo: TeacherData {
-        guard !searchText.isEmpty, isValidTeacher else {
+        guard !searchText.teacherRoutineSearchText.isEmpty, isValidTeacher else {
             return TeacherData(
                 name: "Unknown",
                 initial: "N/A",
@@ -295,7 +309,7 @@ struct TeacherView: View {
             // Find routine
         if let firstRoutine = routines.first(where: { routine in
             guard let initial = routine.teacherInfo?.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText)
+            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
         }) {
             return TeacherData(
                 name: firstRoutine.teacherInfo?.name ?? "Unknown",
@@ -331,16 +345,16 @@ struct TeacherView: View {
                 TeacherClasses(
                     selectedDate: selectedDate,
                     mergedRoutines: mergedRoutines,
-                    hasSearchText: !searchText.isEmpty,
+                    hasSearchText: !searchText.teacherRoutineSearchText.isEmpty,
                     isValidTeacher: isValidTeacher
                 )
             }
-            .searchable(text: $searchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Teacher (Name/Initial)")
+            .searchable(text: $searchText.teacherRoutineSearchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Teacher (Name/Initial)")
             .searchSuggestions {
                 ForEach(allTeachers.filter { teacher in
-                    searchText.isEmpty ||
-                    teacher.name.localizedCaseInsensitiveContains(searchText) ||
-                    teacher.initial.localizedCaseInsensitiveContains(searchText)
+                    searchText.teacherRoutineSearchText.isEmpty ||
+                    teacher.name.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText) ||
+                    teacher.initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
                 }, id: \.initial) { teacher in
                     HStack {
                         VStack(alignment: .leading) {
@@ -355,14 +369,14 @@ struct TeacherView: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        searchText = teacher.initial
+                        searchText.teacherRoutineSearchText = teacher.initial
                         isSearchActive = false
                     }
                 }
             }
             .sheet(isPresented: $insightSheet) {
                     TeacherInsights(
-                        searchedTeacher: searchText,
+                        searchedTeacher: searchText.teacherRoutineSearchText,
                         sections: uniqueSectionsForTeacher,
                         totalCoursesEnrolled: uniqueCoursesForTeacher.count,
                         totalWeeklyClasses: totalWeeklyClasses,
@@ -392,7 +406,7 @@ struct TeacherView: View {
                         Button(action: {
                             insightSheet = true
                         }, label: {
-                            Text(searchText).font(.callout.bold())
+                            Text(searchText.teacherRoutineSearchText).font(.callout.bold())
                         })
                         .contentShape(Rectangle())
                     }

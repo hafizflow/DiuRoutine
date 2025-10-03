@@ -1,4 +1,5 @@
 import SwiftUI
+import Lottie
 
 struct StudentClasses: View {
     let selectedDate: Date?
@@ -61,38 +62,39 @@ struct StudentClasses: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: getEmptyStateIcon())
-                .font(.system(size: 48))
-                .foregroundStyle(.tertiary)
-            
+        VStack(alignment: .center, spacing: 12) {
+            getEmptyStateAnimation()
             Text(getEmptyStateText())
                 .font(.title3)
                 .fontWeight(.medium)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.top, 100)
     }
     
-    private func getEmptyStateIcon() -> String {
+
+    @ViewBuilder
+    private func getEmptyStateAnimation() -> some View {
         if !hasSearchText {
-            return "calendar.badge.clock"
+            LottieHelperView(fileName: "world.json", contentMode: .scaleAspectFit, playLoopMode: .loop, speed: 0.5)
+                .frame(maxHeight: 450)
+                
         } else if !isValidSection {
-            return "exclamationmark.magnifyingglass"
+            LottieHelperView(fileName: "notfound.json", contentMode: .scaleAspectFit, playLoopMode: .loop, speed: 0.5)
+                .frame(maxHeight: 350).padding(.top, 50)
         } else {
-            return "magnifyingglass"
+            LottieHelperView(fileName: "sloth.json", contentMode: .scaleAspectFit, playLoopMode: .loop)
+                .frame(maxHeight: 300)
         }
     }
     
     private func getEmptyStateText() -> String {
         if !hasSearchText {
-            return "Search by section to view classes"
+            return "Search a section to view routine"
         } else if !isValidSection {
-            return "Invalid section. Please enter a valid section."
+            return "Section not found. Try again"
         } else {
-            return "No class found"
+            return "No classes today. Enjoy your break"
         }
     }
     

@@ -1,20 +1,26 @@
 import SwiftUI
 import SwiftData
+import Combine
+
+class StudentRoutineStore: ObservableObject {
+    @Published var studentRoutineSearchText: String {
+        didSet {
+            UserDefaults.standard.set(studentRoutineSearchText, forKey: "studentRoutineSearchText")
+        }
+    }
+    init() {
+        self.studentRoutineSearchText = UserDefaults.standard.string(forKey: "studentRoutineSearchText") ?? ""
+    }
+}
 
 struct StudentView: View {
     @State private var selectedDate: Date = Date()
-    @State private var selectedSection: RoutineType = .routine
-    @State private var searchText: String = ""
+    @StateObject private var routineStore = StudentRoutineStore()
     @Query private var routines: [RoutineDO]
     
     @Binding var isSearchActive: Bool
     @State var insightSheet: Bool = false
     @Namespace private var animation
-    
-    enum RoutineType: String, CaseIterable, Identifiable {
-        case routine, insights
-        var id: Self { self }
-    }
     
     private var allSections: [String] {
         let sections = routines.compactMap { $0.section }
@@ -28,17 +34,17 @@ struct StudentView: View {
     }
     
     private var isValidSection: Bool {
-        guard !searchText.isEmpty else { return false }
-        return allSections.contains(where: { $0.caseInsensitiveCompare(searchText) == .orderedSame })
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return false }
+        return allSections.contains(where: { $0.caseInsensitiveCompare(routineStore.studentRoutineSearchText) == .orderedSame })
     }
     
     private var filteredRoutines: [RoutineDO] {
-        guard !searchText.isEmpty else { return [] }
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return [] }
         guard isValidSection else { return [] }
         
         var filtered = routines.filter { routine in
             guard let section = routine.section else { return false }
-            return section.localizedStandardContains(searchText)
+            return section.localizedStandardContains(routineStore.studentRoutineSearchText)
         }
         
         let dayFormatter = DateFormatter()
@@ -57,29 +63,29 @@ struct StudentView: View {
             return start1 < start2
         }
         
-//            // Print filtered routines
-//        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
-//        print("Total routines found: \(sorted.count)")
-//        for (index, routine) in sorted.enumerated() {
-//            print("\n[\(index + 1)]")
-//            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
-//            print("  Section: \(routine.section ?? "N/A")")
-//            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
-//            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
-//            print("  Room: \(routine.room ?? "N/A")")
-//            print("  Day: \(routine.day ?? "N/A")")
-//        }
-//        print("=====================================\n")
+            //            // Print filtered routines
+            //        print("=== Filtered Routines for \(routineStore.studentRoutineSearchText) on \(selectedDay) ===")
+            //        print("Total routines found: \(sorted.count)")
+            //        for (index, routine) in sorted.enumerated() {
+            //            print("\n[\(index + 1)]")
+            //            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+            //            print("  Section: \(routine.section ?? "N/A")")
+            //            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+            //            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
+            //            print("  Room: \(routine.room ?? "N/A")")
+            //            print("  Day: \(routine.day ?? "N/A")")
+            //        }
+            //        print("=====================================\n")
         
         return sorted
     }
     
     private var uniqueCoursesForSection: [(title: String, code: String)] {
-        guard !searchText.isEmpty else { return [] }
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return [] }
         
         let routinesForSection = routines.filter { routine in
             guard let section = routine.section else { return false }
-            return section.localizedCaseInsensitiveContains(searchText)
+            return section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
         }
         
         var seen = Set<String>()
@@ -140,7 +146,7 @@ struct StudentView: View {
             let teacherCell        = sortedGroup.first?.teacherInfo?.cell ?? "N/A"
             let teacherRoom        = sortedGroup.first?.teacherInfo?.teacherRoom ?? "N/A"
             let techerImageUrl     = sortedGroup.first?.teacherInfo?.imageUrl ?? ""
-
+            
             
             let mergedRoutine = MergedRoutine(
                 startTime: startTime,
@@ -171,12 +177,118 @@ struct StudentView: View {
         }
     }
     
+        // NEW: Get all routines for the entire week (for PDF)
+    private var weeklyMergedRoutines: [MergedRoutine] {
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return [] }
+        guard isValidSection else { return [] }
+        
+            // Get ALL routines for this section (no day filter)
+        let routinesForSection = routines.filter { routine in
+            guard let section = routine.section else { return false }
+            return section.localizedStandardContains(routineStore.studentRoutineSearchText)
+        }
+        
+            // Group by day
+        let groupedByDay = Dictionary(grouping: routinesForSection) { routine in
+            routine.day ?? "Unknown"
+        }
+        
+        var allMerged: [MergedRoutine] = []
+        
+        for (_, dayRoutines) in groupedByDay {
+            let sortedDayRoutines = dayRoutines.sorted { routine1, routine2 in
+                guard let start1 = routine1.startTime, let start2 = routine2.startTime else {
+                    return false
+                }
+                return start1 < start2
+            }
+            
+            let dayGrouped = Dictionary(grouping: sortedDayRoutines) { routine in
+                RoutineGroupKey(
+                    teacherInitial: routine.teacherInfo?.initial ?? routine.initial ?? "N/A",
+                    courseCode: routine.courseInfo?.code ?? "N/A"
+                )
+            }
+            
+            var dayMerged: [MergedRoutine] = []
+            
+            for (key, group) in dayGrouped {
+                let sortedGroup = group.sorted { lhs, rhs in
+                    guard
+                        let idx1 = timeOrder.firstIndex(of: lhs.startTime ?? ""),
+                        let idx2 = timeOrder.firstIndex(of: rhs.startTime ?? "")
+                    else {
+                        return (lhs.startTime ?? "") < (rhs.startTime ?? "")
+                    }
+                    return idx1 < idx2
+                }
+                
+                let startTime = sortedGroup.first?.startTime ?? "N/A"
+                let endTime   = sortedGroup.last?.endTime ?? "N/A"
+                let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown"
+                let courseCode = key.courseCode
+                let teacherInitial = key.teacherInitial
+                let section     = sortedGroup.first?.section ?? "N/A"
+                    // Remove "(COM LAB)" from room number
+                let rawRoom = sortedGroup.first?.room ?? "N/A"
+                let room = rawRoom.replacingOccurrences(of: "(COM LAB)", with: "").trimmingCharacters(in: .whitespaces)
+                let teacherName        = sortedGroup.first?.teacherInfo?.name ?? "Unknown"
+                let teacherDesignation = sortedGroup.first?.teacherInfo?.designation ?? "Unknown"
+                let teacherEmail       = sortedGroup.first?.teacherInfo?.email ?? "N/A"
+                let teacherCell        = sortedGroup.first?.teacherInfo?.cell ?? "N/A"
+                let teacherRoom        = sortedGroup.first?.teacherInfo?.teacherRoom ?? "N/A"
+                let teacherImageUrl    = sortedGroup.first?.teacherInfo?.imageUrl ?? ""
+                
+                let mergedRoutine = MergedRoutine(
+                    startTime: startTime,
+                    endTime: endTime,
+                    courseTitle: courseTitle,
+                    courseCode: courseCode,
+                    section: section,
+                    teacherInitial: teacherInitial,
+                    teacherName: teacherName,
+                    teacherDesignation: teacherDesignation,
+                    teacherRoom: teacherRoom,
+                    teacherCell: teacherCell,
+                    teacherEmail: teacherEmail,
+                    teacherImageUrl: teacherImageUrl,
+                    room: room,
+                    routines: sortedGroup
+                )
+                
+                dayMerged.append(mergedRoutine)
+            }
+            
+            allMerged.append(contentsOf: dayMerged)
+        }
+        
+            // Define desired day order
+        let dayOrder = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]
+        
+            // Sort merged routines by day order first, then by startTime
+        return allMerged.sorted { a, b in
+            let dayIndexA = dayOrder.firstIndex(of: a.routines.first?.day ?? "") ?? Int.max
+            let dayIndexB = dayOrder.firstIndex(of: b.routines.first?.day ?? "") ?? Int.max
+            
+            if dayIndexA != dayIndexB {
+                return dayIndexA < dayIndexB
+            } else {
+                guard let idxA = timeOrder.firstIndex(of: a.startTime),
+                      let idxB = timeOrder.firstIndex(of: b.startTime) else {
+                    return a.startTime < b.startTime
+                }
+                return idxA < idxB
+            }
+        }
+    }
+
+    
     private var totalWeeklyDurationForSection: String {
-        guard !searchText.isEmpty else { return "0h 0m" }
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return "0h 0m" }
         
         let routinesForSection = routines.filter { routine in
             guard let section = routine.section else { return false }
-            return section.localizedCaseInsensitiveContains(searchText)
+            return section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
         }
         
         let totalMinutes = routinesForSection.reduce(0) { partial, routine in
@@ -197,11 +309,11 @@ struct StudentView: View {
     }
     
     private var uniqueTeachersForSection: [TeacherInfo] {
-        guard !searchText.isEmpty else { return [] }
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return [] }
         
         let routinesForSection = routines.filter { routine in
             guard let section = routine.section else { return false }
-            return section.localizedCaseInsensitiveContains(searchText)
+            return section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
         }
         
         var seen = Set<String>()
@@ -228,11 +340,11 @@ struct StudentView: View {
     }
     
     private var totalWeeklyClasses: Int {
-        guard !searchText.isEmpty else { return 0 }
+        guard !routineStore.studentRoutineSearchText.isEmpty else { return 0 }
         
         let routinesForSection = routines.filter { routine in
             guard let section = routine.section else { return false }
-            return section.localizedCaseInsensitiveContains(searchText)
+            return section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
         }
         
         let groupedByDay = Dictionary(grouping: routinesForSection) { routine in
@@ -264,14 +376,14 @@ struct StudentView: View {
                 StudentClasses(
                     selectedDate: selectedDate,
                     mergedRoutines: mergedRoutines,
-                    hasSearchText: !searchText.isEmpty,
+                    hasSearchText: !routineStore.studentRoutineSearchText.isEmpty,
                     isValidSection: isValidSection,
                 )
             }
-            .searchable(text: $searchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Section (61_N)")
+            .searchable(text: $routineStore.studentRoutineSearchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Section (61_N)")
             .searchSuggestions {
                 ForEach(allSections.filter { section in
-                    searchText.isEmpty || section.localizedCaseInsensitiveContains(searchText)
+                    routineStore.studentRoutineSearchText.isEmpty || section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
                 }, id: \.self) { section in
                     HStack {
                         Text(section).searchCompletion(section).foregroundStyle(.primary)
@@ -280,21 +392,22 @@ struct StudentView: View {
                     }
                     .contentShape(Rectangle())
                     .onTapGesture {
-                        searchText = section
+                        routineStore.studentRoutineSearchText = section
                         isSearchActive = false
                     }
                 }
             }
             .sheet(isPresented: $insightSheet) {
-                    StudentInsight(
-                        searchedSection: searchText,
-                        totalCoursesEnrolled: uniqueCoursesForSection.count,
-                        totalWeeklyClasses: totalWeeklyClasses,
-                        totalWeeklyHours: totalWeeklyDurationForSection,
-                        courses: uniqueCoursesForSection,
-                        teachers: uniqueTeachersForSection
-                    )
-
+                StudentInsight(
+                    searchedSection: routineStore.studentRoutineSearchText,
+                    totalCoursesEnrolled: uniqueCoursesForSection.count,
+                    totalWeeklyClasses: totalWeeklyClasses,
+                    totalWeeklyHours: totalWeeklyDurationForSection,
+                    courses: uniqueCoursesForSection,
+                    teachers: uniqueTeachersForSection,
+                    mergedRoutines: weeklyMergedRoutines
+                )
+                
                 .navigationTransition(.zoom(sourceID: "Insights", in: animation))
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
@@ -317,7 +430,7 @@ struct StudentView: View {
                         Button(action: {
                             insightSheet = true
                         }, label: {
-                            Text(searchText).font(.callout.bold())
+                            Text(routineStore.studentRoutineSearchText).font(.callout.bold())
                         })
                         .contentShape(Rectangle())
                     }

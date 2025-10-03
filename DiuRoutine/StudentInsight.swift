@@ -15,8 +15,11 @@ struct StudentInsight: View {
     let totalWeeklyHours: String
     let courses: [(title: String, code: String)]
     let teachers: [TeacherInfo]
+    let mergedRoutines: [MergedRoutine]
     
     @State private var versionStore = RoutineVersionStore()
+    @State private var pdfURL: URL?
+    @State private var showPDF = false
     
     init(
         searchedSection: String = "",
@@ -24,7 +27,8 @@ struct StudentInsight: View {
         totalWeeklyClasses: Int = 0,
         totalWeeklyHours: String = "0h 0m",
         courses: [(title: String, code: String)],
-        teachers: [TeacherInfo]
+        teachers: [TeacherInfo],
+        mergedRoutines: [MergedRoutine] = []
     ) {
         self.searchedSection = searchedSection
         self.totalCoursesEnrolled = totalCoursesEnrolled
@@ -32,11 +36,33 @@ struct StudentInsight: View {
         self.totalWeeklyHours = totalWeeklyHours
         self.courses = courses
         self.teachers = teachers
+        self.mergedRoutines = mergedRoutines
     }
     
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
+//        let _ = {
+//            print("=== StudentInsight Received Data ===")
+//            print("Section: \(searchedSection)")
+//            print("Total Merged Routines: \(mergedRoutines.count)")
+//            print("\nMerged Routines Details:")
+//            for (index, routine) in mergedRoutines.enumerated() {
+//                print("\n[\(index + 1)]")
+//                print("  Course: \(routine.courseCode) - \(routine.courseTitle)")
+//                print("  Teacher: \(routine.teacherInitial)")
+//                print("  Time: \(routine.startTime) - \(routine.endTime)")
+//                print("  Room: \(routine.room)")
+//                print("  Section: \(routine.section)")
+//                print("  Original routines count: \(routine.routines.count)")
+//                if let firstRoutine = routine.routines.first {
+//                    print("  Day from first routine: \(firstRoutine.day ?? "nil")")
+//                }
+//            }
+//            print("====================================\n")
+//        }()
+        
+        
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
@@ -64,40 +90,44 @@ struct StudentInsight: View {
                         
                         Spacer()
                         
-                        ZStack(alignment: .center) {
-                            Button(action: {
-                                    // Download PDF
-                            }) {
-                                ZStack(alignment: .center) {
-                                    RoundedRectangle(cornerRadius: 15)
-                                        .fill(.teal.opacity(0.1))
-                                        .frame(height: 60)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 15)
-                                                .stroke(.gray.opacity(0.45), lineWidth: 1)
-                                        )
+                        
+                        Button(action: {
+                            generatePDF()
+                        }) {
+                            ZStack(alignment: .center) {
+                                RoundedRectangle(cornerRadius: 15)
+                                    .fill(.teal.opacity(0.1))
+                                    .frame(height: 60)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 15)
+                                            .stroke(.gray.opacity(0.45), lineWidth: 1)
+                                    )
+                                
+                                VStack(alignment: .center, spacing: 4) {
+                                    Image(systemName: "arrow.down.app.fill")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.teal)
+                                        .brightness(-0.1)
                                     
-                                    VStack(alignment: .center, spacing: 4) {
-                                        Image(systemName: "arrow.down.app.fill")
-                                            .font(.title3)
-                                            .fontWeight(.semibold)
-                                            .foregroundStyle(.teal)
-                                            .brightness(-0.1)
-                                        
-                                        Text("PDF")
-                                            .lineLimit(1)
-                                            .multilineTextAlignment(.center)
-                                            .font(.system(size: 10))
-                                            .foregroundStyle(.teal)
-                                            .fontWeight(.bold)
-                                            .brightness(-0.1)
-                                    }
+                                    Text("PDF")
+                                        .lineLimit(1)
+                                        .multilineTextAlignment(.center)
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.teal)
+                                        .fontWeight(.bold)
+                                        .brightness(-0.1)
                                 }
                             }
                         }
                         .frame(maxWidth: 70)
                     }
-                    
+                    .onChange(of: pdfURL) { _, newURL in
+                        if newURL != nil {
+                            showPDF = true
+                        }
+                    }
+                        
                     Divider()
                         .frame(height: 1)
                         .background(.gray.opacity(0.45))
@@ -134,9 +164,13 @@ struct StudentInsight: View {
                                                 
                                             case .failure(_):
                                                 Circle()
-                                                    .fill(.gray.opacity(0.3))
+                                                    .fill(.gray.opacity(0.2))
                                                     .frame(width: 50, height: 50)
-                                                    .overlay(Image(systemName: "person.fill").foregroundStyle(.secondary))
+                                                    .overlay(
+                                                        Text(teacher.initial.prefix(2))
+                                                            .font(.headline)
+                                                            .foregroundColor(.primary)
+                                                    )
                                                 
                                             @unknown default:
                                                 EmptyView()
@@ -144,9 +178,13 @@ struct StudentInsight: View {
                                     }
                                 } else {
                                     Circle()
-                                        .fill(.gray.opacity(0.3))
+                                        .fill(.gray.opacity(0.2))
                                         .frame(width: 50, height: 50)
-                                        .overlay(Image(systemName: "person.fill").foregroundStyle(.gray))
+                                        .overlay(
+                                            Text(teacher.initial.prefix(2))
+                                                .font(.headline)
+                                                .foregroundColor(.primary)
+                                        )
                                 }
                                 
                                 
@@ -167,7 +205,7 @@ struct StudentInsight: View {
                         .background(.gray.opacity(0.45))
                         .padding(.vertical)
                     
-                    VStack(spacing: 8) {
+                    VStack(spacing: 10) {
                         Text("Enrolled Courses")
                             .font(.system(size: 20))
                             .fontWeight(.bold)
@@ -284,8 +322,182 @@ struct StudentInsight: View {
                     }.tint(.primary).contentShape(Rectangle())
                 }
             }
+            .sheet(isPresented: $showPDF) {
+                if let url = pdfURL {
+                    PDFViewerView(url: url)
+                }
+            }
         }
     }
-}
+    
+    func generatePDF() {
+        guard !mergedRoutines.isEmpty else { return }
+        
+        let pdfMetaData = [
+            kCGPDFContextCreator: "Class Routine App",
+            kCGPDFContextTitle: "Class Routine - \(searchedSection)"
+        ]
+        let format = UIGraphicsPDFRendererFormat()
+        format.documentInfo = pdfMetaData as [String: Any]
+        
+        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842)
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
+        
+        let data = renderer.pdfData { context in
+            context.beginPage()
+            
+            let titleFont = UIFont.boldSystemFont(ofSize: 24)
+            let subtitleFont = UIFont.systemFont(ofSize: 14)
+            let headerFont = UIFont.boldSystemFont(ofSize: 12)
+            let bodyFont = UIFont.systemFont(ofSize: 11)
+            
+                // Title
+            let title = "Class Routine - \(searchedSection)"
+            let titleAttributes: [NSAttributedString.Key: Any] = [.font: titleFont, .foregroundColor: UIColor.black]
+            let titleSize = title.size(withAttributes: titleAttributes)
+            let titleRect = CGRect(x: (pageRect.width - titleSize.width) / 2, y: 40, width: titleSize.width, height: titleSize.height)
+            title.draw(in: titleRect, withAttributes: titleAttributes)
+            
+                // Version
+            let subtitle = "Version: \(versionStore.routineVersion)"
+            let subtitleAttributes: [NSAttributedString.Key: Any] = [.font: subtitleFont, .foregroundColor: UIColor.gray]
+            let subtitleSize = subtitle.size(withAttributes: subtitleAttributes)
+            let subtitleRect = CGRect(x: (pageRect.width - subtitleSize.width) / 2, y: 70, width: subtitleSize.width, height: subtitleSize.height)
+            subtitle.draw(in: subtitleRect, withAttributes: subtitleAttributes)
+            
+                // Table setup
+            let tableTop: CGFloat = 110
+            let tableLeft: CGFloat = 40
+            let colWidths: [CGFloat] = [80, 125, 75, 60, 60, 115] // Day, Time, Course, Section, Teacher, Room
+            let rowHeight: CGFloat = 30
+            let headers = ["Day", "Time", "Course", "Section", "Teacher", "Room"]
+            
+                // Draw table header (centered)
+            var xPos = tableLeft
+            let headerRect = CGRect(x: tableLeft, y: tableTop, width: colWidths.reduce(0, +), height: rowHeight)
+            context.cgContext.setFillColor(UIColor.systemTeal.withAlphaComponent(0.2).cgColor)
+            context.cgContext.fill(headerRect)
+            
+            for (i, header) in headers.enumerated() {
+                let rect = CGRect(x: xPos, y: tableTop + 7, width: colWidths[i], height: rowHeight)
+                let paragraphStyle = NSMutableParagraphStyle()
+                paragraphStyle.alignment = .center
+                let attr: [NSAttributedString.Key: Any] = [.font: headerFont, .paragraphStyle: paragraphStyle]
+                header.draw(in: rect, withAttributes: attr)
+                xPos += colWidths[i]
+            }
+            
+            context.cgContext.setStrokeColor(UIColor.black.cgColor)
+            context.cgContext.setLineWidth(1.5)
+            context.cgContext.stroke(headerRect)
+            
+                // Draw vertical lines between header columns
+            xPos = tableLeft
+            for i in 0..<colWidths.count {
+                xPos += colWidths[i]
+                if i < colWidths.count - 1 {
+                    context.cgContext.move(to: CGPoint(x: xPos, y: tableTop))
+                    context.cgContext.addLine(to: CGPoint(x: xPos, y: tableTop + rowHeight))
+                    context.cgContext.strokePath()
+                }
+            }
+            
+                // Draw table rows with merged Day cells and dynamic row height
+            var yPos = tableTop + rowHeight
+            var index = 0
+            while index < mergedRoutines.count {
+                let routine = mergedRoutines[index]
+                let day = routine.routines.first?.day ?? "-"
+                
+                    // Count how many consecutive routines have the same day
+                var span = 1
+                for nextIndex in (index + 1)..<mergedRoutines.count {
+                    let nextRoutine = mergedRoutines[nextIndex]
+                    if nextRoutine.routines.first?.day == day {
+                        span += 1
+                    } else {
+                        break
+                    }
+                }
+                
+                    // Calculate maximum row height for this span
+                var maxRowHeight: CGFloat = rowHeight
+                for row in 0..<span {
+                    let r = mergedRoutines[index + row]
+                    let values = [
+                        "", // Day column will be drawn separately
+                        "\(format12Hour(r.startTime)) - \(format12Hour(r.endTime))",
+                        r.courseCode,
+                        r.section,
+                        r.teacherInitial,
+                        r.room
+                    ]
+                    
+                    for (i, value) in values.enumerated() {
+                        let maxWidth = colWidths[i] - 10
+                        let size = NSString(string: value).boundingRect(
+                            with: CGSize(width: maxWidth, height: CGFloat.greatestFiniteMagnitude),
+                            options: [.usesLineFragmentOrigin, .usesFontLeading],
+                            attributes: [.font: bodyFont],
+                            context: nil
+                        )
+                        maxRowHeight = max(maxRowHeight, size.height + 14) // 7 top + 7 bottom inset
+                    }
+                }
+                
+                    // Draw Day cell once for 'span' rows
+                let dayRect = CGRect(x: tableLeft, y: yPos, width: colWidths[0], height: maxRowHeight * CGFloat(span))
+                context.cgContext.stroke(dayRect)
+                
+                    // Vertically center the Day text
+                let dayTextSize = day.size(withAttributes: [.font: bodyFont])
+                let dayTextY = yPos + (maxRowHeight * CGFloat(span) - dayTextSize.height) / 2
+                let centeredDayRect = CGRect(x: tableLeft, y: dayTextY, width: colWidths[0], height: dayTextSize.height)
+                let dayPara = NSMutableParagraphStyle()
+                dayPara.alignment = .center
+                let dayAttr: [NSAttributedString.Key: Any] = [.font: bodyFont, .paragraphStyle: dayPara]
+                day.draw(in: centeredDayRect, withAttributes: dayAttr)
+                
+                    // Draw the rest columns for each routine in the span
+                for row in 0..<span {
+                    let r = mergedRoutines[index + row]
+                    let values = [
+                        "", // Day is already drawn
+                        "\(format12Hour(r.startTime)) - \(format12Hour(r.endTime))",
+                        r.courseCode,
+                        r.section,
+                        r.teacherInitial,
+                        r.room
+                    ]
+                    
+                    var xCell = tableLeft
+                    for (i, value) in values.enumerated() {
+                        let cellRect = CGRect(x: xCell, y: yPos + CGFloat(row) * maxRowHeight, width: colWidths[i], height: maxRowHeight)
+                        
+                            // Draw vertical lines only for columns other than Day
+                        if i != 0 {
+                            context.cgContext.stroke(cellRect)
+                        }
+                        
+                            // Text alignment - center all content
+                        let para = NSMutableParagraphStyle()
+                        para.alignment = .center
+                        value.draw(in: cellRect.insetBy(dx: 5, dy: 7), withAttributes: [.font: bodyFont, .paragraphStyle: para])
+                        
+                        xCell += colWidths[i]
+                    }
+                }
+                
+                yPos += maxRowHeight * CGFloat(span)
+                index += span
+            }
+        }
+        
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ClassRoutine_\(searchedSection).pdf")
+        try? data.write(to: tempURL)
+        pdfURL = tempURL
+        showPDF = true
+    }
 
+}
 

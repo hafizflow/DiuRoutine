@@ -17,8 +17,16 @@ class RoutineVersionStore: ObservableObject {
             UserDefaults.standard.set(routineVersion, forKey: "routineVersion")
         }
     }
+    
+    @Published var inMaintenance: Bool {
+        didSet {
+            UserDefaults.standard.set(inMaintenance, forKey: "inMaintenance")
+        }
+    }
+    
     init() {
         self.routineVersion = UserDefaults.standard.string(forKey: "routineVersion") ?? ""
+        self.inMaintenance = UserDefaults.standard.bool(forKey: "inMaintenance")
     }
 }
 
@@ -32,6 +40,10 @@ class WebService {
         do {
             let versionResponse: VersionResponse = try await fetchSingleData(fromUrl: "https://diu.zahidp.xyz/api/version")
             
+                // ✅ Always update inMaintenance
+            versionStore.inMaintenance = versionResponse.data.inMaintenance
+            
+                // ✅ Then handle version update
             if versionResponse.data.version != versionStore.routineVersion {
                 print("New version detected! Updating database...")
                 await updateDataInDatabase(modelContext: modelContext)
