@@ -9,6 +9,7 @@ class RoutineDO {
     var section: String?
     var room: String?
     var initial: String?
+    var code: String?
     var courseInfo: CourseInfoDO?
     var teacherInfo: TeacherInfoDO?
     
@@ -20,6 +21,7 @@ class RoutineDO {
         section: String?,
         room: String?,
         initial: String?,
+        code: String?,
         courseInfo: CourseInfoDO?,
         teacherInfo: TeacherInfoDO?
     ) {
@@ -30,6 +32,7 @@ class RoutineDO {
         self.section = section
         self.room = room
         self.initial = initial
+        self.code = code
         self.courseInfo = courseInfo
         self.teacherInfo = teacherInfo
     }
@@ -43,6 +46,7 @@ class RoutineDO {
             section: dto.section,
             room: dto.room,
             initial: dto.initial,
+            code: dto.code,
             courseInfo: dto.courseInfo.map { CourseInfoDO(dto: $0) },
             teacherInfo: dto.teacherInfo.map { TeacherInfoDO(dto: $0) }
         )

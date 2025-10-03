@@ -11,6 +11,7 @@ struct RoutineDTO: Decodable {
     let section: String?
     let room: String?
     let initial: String?
+    let code: String?
     let courseInfo: CourseInfoDTO?
     let teacherInfo: TeacherInfoDTO?
 }

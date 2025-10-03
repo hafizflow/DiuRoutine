@@ -92,7 +92,9 @@ struct StudentInsight: View {
                         
                         
                         Button(action: {
-                            generatePDF()
+                            if pdfURL != nil {
+                                showPDF = true
+                            }
                         }) {
                             ZStack(alignment: .center) {
                                 RoundedRectangle(cornerRadius: 15)
@@ -122,11 +124,7 @@ struct StudentInsight: View {
                         }
                         .frame(maxWidth: 70)
                     }
-                    .onChange(of: pdfURL) { _, newURL in
-                        if newURL != nil {
-                            showPDF = true
-                        }
-                    }
+                    
                         
                     Divider()
                         .frame(height: 1)
@@ -311,9 +309,12 @@ struct StudentInsight: View {
                 }
                 
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Settings", systemImage: "arrowshape.turn.up.right") {
-                        
-                    }.tint(.primary).contentShape(Rectangle())
+                    if let url = pdfURL {
+                        ShareLink(item: url) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                        .tint(.primary).contentShape(Rectangle())
+                    }
                 }
                 
                 ToolbarItem(placement: .topBarTrailing) {
@@ -326,6 +327,9 @@ struct StudentInsight: View {
                 if let url = pdfURL {
                     PDFViewerView(url: url)
                 }
+            }
+            .onAppear {
+                generatePDF()
             }
         }
     }
@@ -493,10 +497,9 @@ struct StudentInsight: View {
             }
         }
         
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ClassRoutine_\(searchedSection).pdf")
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ClassRoutine - \(searchedSection).pdf")
         try? data.write(to: tempURL)
         pdfURL = tempURL
-        showPDF = true
     }
 
 }

@@ -30,7 +30,7 @@ struct TeacherView: View {
         var teachers: [(name: String, initial: String)] = []
         
         for routine in routines {
-            let initial = routine.teacherInfo?.initial ?? routine.initial ?? "N/A"
+            let initial = routine.initial ?? "N/A"
             
                 // Only add if we haven't seen this initial before
             if !seenInitials.contains(initial) {
@@ -105,7 +105,7 @@ struct TeacherView: View {
         let grouped = Dictionary(grouping: routinesForDay) { routine in
             RoutineGroupKey(
                 section: routine.section ?? "N/A",
-                courseCode: routine.courseInfo?.code ?? "N/A"
+                courseCode: routine.code ?? "N/A"
             )
         }
         
@@ -126,7 +126,7 @@ struct TeacherView: View {
             let endTime   = sortedGroup.last?.endTime ?? "N/A"
             let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown"
             let courseCode = key.courseCode
-            let teacherInitial = sortedGroup.first?.teacherInfo?.initial ?? sortedGroup.first?.initial ?? "N/A"
+            let teacherInitial = sortedGroup.first?.initial ?? "N/A"
             let section     = key.section
             let room        = sortedGroup.first?.room ?? "N/A"
             let teacherName        = sortedGroup.first?.teacherInfo?.name ?? "Unknown"
@@ -165,6 +165,111 @@ struct TeacherView: View {
         }
     }
     
+        // NEW: Get all routines for the entire week (for PDF)
+    private var weeklyMergedRoutines: [MergedRoutine] {
+        guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
+        guard isValidTeacher else { return [] }
+        
+            // Get ALL routines for this teacher (no day filter)
+        let routinesForTeacher = routines.filter { routine in
+            guard let initial = routine.initial else { return false }
+            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
+        }
+        
+            // Group by day
+        let groupedByDay = Dictionary(grouping: routinesForTeacher) { routine in
+            routine.day ?? "Unknown"
+        }
+        
+        var allMerged: [MergedRoutine] = []
+        
+        for (_, dayRoutines) in groupedByDay {
+            let sortedDayRoutines = dayRoutines.sorted { routine1, routine2 in
+                guard let start1 = routine1.startTime, let start2 = routine2.startTime else {
+                    return false
+                }
+                return start1 < start2
+            }
+            
+            let dayGrouped = Dictionary(grouping: sortedDayRoutines) { routine in
+                RoutineGroupKey(
+                    section: routine.section ?? "N/A",
+                    courseCode: routine.code ?? "N/A"
+                )
+            }
+            
+            var dayMerged: [MergedRoutine] = []
+            
+            for (key, group) in dayGrouped {
+                let sortedGroup = group.sorted { lhs, rhs in
+                    guard
+                        let idx1 = timeOrder.firstIndex(of: lhs.startTime ?? ""),
+                        let idx2 = timeOrder.firstIndex(of: rhs.startTime ?? "")
+                    else {
+                        return (lhs.startTime ?? "") < (rhs.startTime ?? "")
+                    }
+                    return idx1 < idx2
+                }
+                
+                let startTime = sortedGroup.first?.startTime ?? "N/A"
+                let endTime   = sortedGroup.last?.endTime ?? "N/A"
+                let courseTitle = sortedGroup.first?.courseInfo?.title ?? "Unknown"
+                let courseCode = key.courseCode
+                let teacherInitial = sortedGroup.first?.initial ?? "N/A"
+                let section     = key.section
+                    // Remove "(COM LAB)" from room number
+                let rawRoom = sortedGroup.first?.room ?? "N/A"
+                let room = rawRoom.replacingOccurrences(of: "(COM LAB)", with: "").trimmingCharacters(in: .whitespaces)
+                let teacherName        = sortedGroup.first?.teacherInfo?.name ?? "Unknown"
+                let teacherDesignation = sortedGroup.first?.teacherInfo?.designation ?? "Unknown"
+                let teacherEmail       = sortedGroup.first?.teacherInfo?.email ?? "N/A"
+                let teacherCell        = sortedGroup.first?.teacherInfo?.cell ?? "N/A"
+                let teacherRoom        = sortedGroup.first?.teacherInfo?.teacherRoom ?? "N/A"
+                let teacherImageUrl    = sortedGroup.first?.teacherInfo?.imageUrl ?? ""
+                
+                let mergedRoutine = MergedRoutine(
+                    startTime: startTime,
+                    endTime: endTime,
+                    courseTitle: courseTitle,
+                    courseCode: courseCode,
+                    section: section,
+                    teacherInitial: teacherInitial,
+                    teacherName: teacherName,
+                    teacherDesignation: teacherDesignation,
+                    teacherRoom: teacherRoom,
+                    teacherCell: teacherCell,
+                    teacherEmail: teacherEmail,
+                    teacherImageUrl: teacherImageUrl,
+                    room: room,
+                    routines: sortedGroup
+                )
+                
+                dayMerged.append(mergedRoutine)
+            }
+            
+            allMerged.append(contentsOf: dayMerged)
+        }
+        
+            // Define desired day order
+        let dayOrder = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]
+        
+            // Sort merged routines by day order first, then by startTime
+        return allMerged.sorted { a, b in
+            let dayIndexA = dayOrder.firstIndex(of: a.routines.first?.day ?? "") ?? Int.max
+            let dayIndexB = dayOrder.firstIndex(of: b.routines.first?.day ?? "") ?? Int.max
+            
+            if dayIndexA != dayIndexB {
+                return dayIndexA < dayIndexB
+            } else {
+                guard let idxA = timeOrder.firstIndex(of: a.startTime),
+                      let idxB = timeOrder.firstIndex(of: b.startTime) else {
+                    return a.startTime < b.startTime
+                }
+                return idxA < idxB
+            }
+        }
+    }
+    
     private var uniqueCoursesForTeacher: [(title: String, code: String)] {
         guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         
@@ -177,7 +282,7 @@ struct TeacherView: View {
         var uniqueCourses: [(title: String, code: String)] = []
         
         for routine in routinesForTeacher {
-            let code = routine.courseInfo?.code ?? "N/A"
+            let code = routine.code ?? "N/A"
             if !seen.contains(code) {
                 seen.insert(code)
                 let title = routine.courseInfo?.title ?? "Unknown Course"
@@ -231,7 +336,7 @@ struct TeacherView: View {
             let mergedForDay = Dictionary(grouping: routinesInDay) { routine in
                 RoutineGroupKey(
                     section: routine.section ?? "N/A",
-                    courseCode: routine.courseInfo?.code ?? "N/A"
+                    courseCode: routine.code ?? "N/A"
                 )
             }
             totalClasses += mergedForDay.count
@@ -292,7 +397,6 @@ struct TeacherView: View {
         return result.sorted()
     }
 
-
     private var teacherInfo: TeacherData {
         guard !searchText.teacherRoutineSearchText.isEmpty, isValidTeacher else {
             return TeacherData(
@@ -313,7 +417,7 @@ struct TeacherView: View {
         }) {
             return TeacherData(
                 name: firstRoutine.teacherInfo?.name ?? "Unknown",
-                initial: firstRoutine.teacherInfo?.initial ?? firstRoutine.initial ?? "N/A",
+                initial: firstRoutine.initial ?? "N/A",
                 designation: firstRoutine.teacherInfo?.designation ?? "N/A",
                 phone: firstRoutine.teacherInfo?.cell ?? "N/A",
                 email: firstRoutine.teacherInfo?.email ?? "N/A",
@@ -382,7 +486,8 @@ struct TeacherView: View {
                         totalWeeklyClasses: totalWeeklyClasses,
                         totalWeeklyHours: totalWeeklyDurationForTeacher,
                         courses: uniqueCoursesForTeacher,
-                        teacher: teacherInfo
+                        teacher: teacherInfo,
+                        mergedRoutines: weeklyMergedRoutines
                     )
                     .navigationTransition(.zoom(sourceID: "Insights", in: animation))
                     .presentationDetents([.medium])
@@ -432,9 +537,6 @@ struct TeacherView: View {
         }
     }
 }
-
-
-
 
 #Preview {
     TeacherView(isSearchActive: .constant(false))

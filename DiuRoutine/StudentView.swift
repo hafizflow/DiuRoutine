@@ -92,7 +92,7 @@ struct StudentView: View {
         var uniqueCourses: [(title: String, code: String)] = []
         
         for routine in routinesForSection {
-            let code = routine.courseInfo?.code ?? "N/A"
+            let code = routine.code ?? "N/A"
             if !seen.contains(code) {
                 seen.insert(code)
                 let title = routine.courseInfo?.title ?? "Unknown Course"
@@ -115,8 +115,8 @@ struct StudentView: View {
         
         let grouped = Dictionary(grouping: routinesForDay) { routine in
             RoutineGroupKey(
-                teacherInitial: routine.teacherInfo?.initial ?? routine.initial ?? "N/A",
-                courseCode: routine.courseInfo?.code ?? "N/A"
+                teacherInitial: routine.initial ?? "N/A",
+                courseCode: routine.code ?? "N/A"
             )
         }
         
@@ -205,8 +205,8 @@ struct StudentView: View {
             
             let dayGrouped = Dictionary(grouping: sortedDayRoutines) { routine in
                 RoutineGroupKey(
-                    teacherInitial: routine.teacherInfo?.initial ?? routine.initial ?? "N/A",
-                    courseCode: routine.courseInfo?.code ?? "N/A"
+                    teacherInitial: routine.initial ?? "N/A",
+                    courseCode: routine.code ?? "N/A"
                 )
             }
             
@@ -282,7 +282,6 @@ struct StudentView: View {
         }
     }
 
-    
     private var totalWeeklyDurationForSection: String {
         guard !routineStore.studentRoutineSearchText.isEmpty else { return "0h 0m" }
         
@@ -320,7 +319,7 @@ struct StudentView: View {
         var teachers: [TeacherInfo] = []
         
         for routine in routinesForSection {
-            let initial = routine.teacherInfo?.initial ?? routine.initial ?? "N/A"
+            let initial = routine.initial ?? "N/A"
             if !seen.contains(initial) {
                 seen.insert(initial)
                 let name = routine.teacherInfo?.name ?? "Unknown Teacher"
@@ -355,8 +354,8 @@ struct StudentView: View {
         for (_, routinesInDay) in groupedByDay {
             let mergedForDay = Dictionary(grouping: routinesInDay) { routine in
                 RoutineGroupKey(
-                    teacherInitial: routine.teacherInfo?.initial ?? routine.initial ?? "N/A",
-                    courseCode: routine.courseInfo?.code ?? "N/A"
+                    teacherInitial: routine.initial ?? "N/A",
+                    courseCode: routine.code ?? "N/A"
                 )
             }
             totalClasses += mergedForDay.count
@@ -453,85 +452,6 @@ struct StudentView: View {
             isSearchActive = false
         }
     }
-}
-
-
-
-func format12Hour(_ time: String) -> String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "hh:mm"
-    guard let date = formatter.date(from: time) else { return time }
-    
-    let calendar = Calendar.current
-    var comps = calendar.dateComponents([.hour, .minute], from: date)
-    
-    if let hour = comps.hour, hour < 8 {
-        comps.hour = hour + 12
-    }
-    let adjustedDate = calendar.date(from: comps) ?? date
-    
-    formatter.dateFormat = "h:mm a"
-    return formatter.string(from: adjustedDate)
-}
-
-func calculateDuration(from startTime: String, to endTime: String) -> String {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "hh:mm"
-    
-    func normalize(_ time: String) -> Int? {
-        guard let date = formatter.date(from: time) else { return nil }
-        let calendar = Calendar.current
-        var hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-        
-        if hour < 8 {
-            hour += 12
-        }
-        return hour * 60 + minute
-    }
-    
-    guard let start = normalize(startTime),
-          let end = normalize(endTime) else {
-        return "N/A"
-    }
-    
-    let duration = end - start
-    guard duration > 0 else { return "N/A" }
-    
-    let hours = duration / 60
-    let minutes = duration % 60
-    
-    if hours > 0 && minutes > 0 {
-        return "\(hours)h \(minutes)m"
-    } else if hours > 0 {
-        return "\(hours)h"
-    } else {
-        return "\(minutes)m"
-    }
-}
-
-func calculateDurationMinutes(from startTime: String, to endTime: String) -> Int {
-    let formatter = DateFormatter()
-    formatter.dateFormat = "hh:mm"
-    
-    func normalize(_ time: String) -> Int? {
-        guard let date = formatter.date(from: time) else { return nil }
-        let calendar = Calendar.current
-        var hour = calendar.component(.hour, from: date)
-        let minute = calendar.component(.minute, from: date)
-        
-        if hour < 8 {
-            hour += 12
-        }
-        return hour * 60 + minute
-    }
-    
-    guard let start = normalize(startTime),
-          let end = normalize(endTime) else {
-        return 0
-    }
-    
-    return max(0, end - start)
 }
 
 #Preview("Student View") {
