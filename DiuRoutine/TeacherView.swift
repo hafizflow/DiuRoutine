@@ -13,6 +13,11 @@ class TeacherRoutineStore: ObservableObject {
     init() {
         self.teacherRoutineSearchText = UserDefaults.standard.string(forKey: "teacherRoutineSearchText") ?? ""
     }
+    
+    func clearData() {
+        teacherRoutineSearchText = ""
+        UserDefaults.standard.removeObject(forKey: "teacherRoutineSearchText")
+    }
 }
 
 
@@ -20,6 +25,7 @@ struct TeacherView: View {
     @State private var selectedDate: Date = Date()
     @StateObject private var searchText = TeacherRoutineStore()
     @State private var insightSheet: Bool = false
+    @State private var showSettings: Bool = false
     @Binding var isSearchActive: Bool
     @Namespace private var animation
     
@@ -478,6 +484,11 @@ struct TeacherView: View {
                     }
                 }
             }
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+                    .environmentObject(StudentRoutineStore())
+                    .environmentObject(TeacherRoutineStore())
+            }
             .sheet(isPresented: $insightSheet) {
                     TeacherInsights(
                         searchedTeacher: searchText.teacherRoutineSearchText,
@@ -524,7 +535,7 @@ struct TeacherView: View {
                 
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Settings", systemImage: "line.3.horizontal.decrease") {
-                        
+                        showSettings = true
                     }
                     .tint(.primary)
                     .contentShape(Rectangle())

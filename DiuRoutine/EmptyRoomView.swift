@@ -8,6 +8,7 @@ struct EmptyRoomView: View {
     
     @Namespace private var topID
     @State private var animateContent = false
+    @State private var showSettings = false
     
     private let timeSlots = [
         "08:30 - 10:00",
@@ -180,9 +181,16 @@ struct EmptyRoomView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+                    .environmentObject(StudentRoutineStore())
+                    .environmentObject(TeacherRoutineStore())
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Settings", systemImage: "line.3.horizontal.decrease") { }
+                    Button("Settings", systemImage: "line.3.horizontal.decrease") {
+                        showSettings = true
+                    }
                         .tint(.primary)
                         .contentShape(Rectangle())
                 }

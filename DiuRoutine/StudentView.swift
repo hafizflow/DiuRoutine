@@ -11,6 +11,11 @@ class StudentRoutineStore: ObservableObject {
     init() {
         self.studentRoutineSearchText = UserDefaults.standard.string(forKey: "studentRoutineSearchText") ?? ""
     }
+    
+    func clearData() {
+        studentRoutineSearchText = ""
+        UserDefaults.standard.removeObject(forKey: "studentRoutineSearchText")
+    }
 }
 
 struct StudentView: View {
@@ -21,6 +26,7 @@ struct StudentView: View {
     @Binding var isSearchActive: Bool
     @State var insightSheet: Bool = false
     @Namespace private var animation
+    @State private var showSettings: Bool = false
     
     private var allSections: [String] {
         let sections = routines.compactMap { $0.section }
@@ -396,6 +402,11 @@ struct StudentView: View {
                     }
                 }
             }
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+                    .environmentObject(StudentRoutineStore())
+                    .environmentObject(TeacherRoutineStore())
+            }
             .sheet(isPresented: $insightSheet) {
                 StudentInsight(
                     searchedSection: routineStore.studentRoutineSearchText,
@@ -442,7 +453,7 @@ struct StudentView: View {
                 
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Settings", systemImage: "line.3.horizontal.decrease") {
-                        
+                        showSettings = true
                     }.tint(.primary).contentShape(Rectangle())
                 }
             }

@@ -1,4 +1,5 @@
 import SwiftUI
+import Toast
 
 struct TeacherData {
     let name: String
@@ -57,6 +58,8 @@ struct TeacherInsights: View {
     @State private var versionStore = RoutineVersionStore()
     @State private var pdfURL: URL?
     @State private var showPDF = false
+    
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     
     var body: some View {
         NavigationStack {
@@ -207,8 +210,27 @@ struct TeacherInsights: View {
                                     if hasValidPhone {
                                         Button(action: {
                                             UIPasteboard.general.string = teacherPhone
-                                            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                             impactFeedback.impactOccurred()
+                                            
+                                            
+                                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                               let window = windowScene.windows.first {
+                                                
+                                                let config = ToastConfiguration(
+                                                    direction: .top,
+                                                    dismissBy: [.time(time: 3.0), .swipe(direction: .natural), .longPress],
+                                                    animationTime: 0.2,
+                                                    attachTo: window
+                                                )
+                                                
+                                                let toast = Toast.default(
+                                                    image: UIImage(systemName: "square.on.square.fill")!,
+                                                    title: "Copyed to Clipboard",
+                                                    subtitle: teacherPhone,
+                                                    config: config
+                                                )
+                                                toast.show()
+                                            }
                                         }) {
                                             Image(systemName: "square.on.square")
                                                 .foregroundStyle(.teal.opacity(0.9))
@@ -244,8 +266,27 @@ struct TeacherInsights: View {
                             if hasValidEmail {
                                 Button(action: {
                                     UIPasteboard.general.string = teacherEmail
-                                    let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
                                     impactFeedback.impactOccurred()
+                                    
+                                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                       let window = windowScene.windows.first {
+                                        
+                                        let config = ToastConfiguration(
+                                            direction: .top,
+                                            dismissBy: [.time(time: 3.0), .swipe(direction: .natural), .longPress],
+                                            animationTime: 0.2,
+                                            attachTo: window
+                                        )
+                                        
+                                        let toast = Toast.default(
+                                            image: UIImage(systemName: "square.on.square.fill")!,
+                                            title: "Copyed to Clipboard",
+                                            subtitle: teacherEmail,
+                                            config: config
+                                        )
+                                        toast.show()
+                                    }
+                                    
                                 }) {
                                     Image(systemName: "square.on.square")
                                         .foregroundStyle(.teal.opacity(0.9))
