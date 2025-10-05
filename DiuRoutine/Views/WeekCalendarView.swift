@@ -5,13 +5,13 @@ struct WeekCalendarView: View {
     
     @Binding var title: String
     @Binding var focused: Week
-    @Binding var selection: Date?
+    @Binding var selection: Date
     
     @State private var weeks: [Week]
     @State private var position: ScrollPosition
     @State private var calendarWidth: CGFloat = .zero
     
-    init(_ title: Binding<String>, selection: Binding<Date?>, focused: Binding<Week>, isDragging: Bool) {
+    init(_ title: Binding<String>, selection: Binding<Date>, focused: Binding<Week>, isDragging: Bool) {
         _title = title
         _focused = focused
         _selection = selection
@@ -71,9 +71,8 @@ struct WeekCalendarView: View {
             title = Calendar.monthAndYear(from: focusedWeek.days.last!)
         }
         .onChange(of: selection) { _, newValue in
-            guard let date = newValue,
-                  let week = weeks.first(where: { $0.days.contains(date) })
-            else { return }
+                // newValue is already a non-optional Date, so no need for guard let
+            guard let week = weeks.first(where: { $0.days.contains(newValue) }) else { return }
             focused = week
         }
     }
@@ -95,13 +94,4 @@ extension WeekCalendarView {
             self.weeks = weeks
         }
     }
-}
-
-#Preview {
-    WeekCalendarView(
-        .constant(""),
-        selection: .constant(nil),
-        focused: .constant(.current),
-        isDragging: false
-    )
 }

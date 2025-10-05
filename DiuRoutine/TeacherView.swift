@@ -28,6 +28,7 @@ struct TeacherView: View {
     @State private var showSettings: Bool = false
     @Binding var isSearchActive: Bool
     @Namespace private var animation
+    @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
     
     @Query private var routines: [RoutineDO]
     
@@ -444,12 +445,15 @@ struct TeacherView: View {
         )
     }
 
+    @AppStorage("cStyle") private var cStyle: Bool = true
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 if isValidTeacher {
-                    CalendarHeaderView2(selectedDate: $selectedDate)
+                    cStyle ?
+                    AnyView(CalendarHeaderView2(selectedDate: $selectedDate))
+                    : AnyView(CalendarHeaderView1(selectedDate: $selectedDate))
                 }
                 
                 TeacherClasses(
@@ -459,6 +463,7 @@ struct TeacherView: View {
                     isValidTeacher: isValidTeacher
                 )
             }
+            .preferredColorScheme(userTheme.colorScheme)
             .searchable(text: $searchText.teacherRoutineSearchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Teacher (Name/Initial)")
             .searchSuggestions {
                 ForEach(allTeachers.filter { teacher in
@@ -518,15 +523,26 @@ struct TeacherView: View {
                 }
                 
                 if isValidTeacher {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: {
-                            insightSheet = true
-                        }, label: {
-                            Text(searchText.teacherRoutineSearchText).font(.callout.bold())
-                        })
-                        .contentShape(Rectangle())
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: {
+                                insightSheet = true
+                            }, label: {
+                                Text(searchText.teacherRoutineSearchText).font(.callout.bold())
+                            })
+                            .contentShape(Rectangle())
+                        }
+                        .matchedTransitionSource(id: "Insights", in: animation)
+                    } else {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: {
+                                insightSheet = true
+                            }, label: {
+                                Text(searchText.teacherRoutineSearchText).font(.callout.bold())
+                            })
+                            .contentShape(Rectangle())
+                        }
                     }
-                    .matchedTransitionSource(id: "Insights", in: animation)
                 }
                 
                 ToolbarItem(placement: .title) {

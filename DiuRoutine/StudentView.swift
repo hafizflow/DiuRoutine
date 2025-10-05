@@ -27,6 +27,7 @@ struct StudentView: View {
     @State var insightSheet: Bool = false
     @Namespace private var animation
     @State private var showSettings: Bool = false
+    @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
     
     private var allSections: [String] {
         let sections = routines.compactMap { $0.section }
@@ -370,12 +371,16 @@ struct StudentView: View {
         return totalClasses
     }
     
+    @AppStorage("cStyle") private var cStyle: Bool = true
+    
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 if isValidSection {
-                    CalendarHeaderView2(selectedDate: $selectedDate)
+                    cStyle ?
+                    AnyView(CalendarHeaderView2(selectedDate: $selectedDate))
+                    : AnyView(CalendarHeaderView1(selectedDate: $selectedDate))
                 }
                 
                 StudentClasses(
@@ -385,6 +390,7 @@ struct StudentView: View {
                     isValidSection: isValidSection,
                 )
             }
+            .preferredColorScheme(userTheme.colorScheme)
             .searchable(text: $routineStore.studentRoutineSearchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Section (61_N)")
             .searchSuggestions {
                 ForEach(allSections.filter { section in
@@ -436,15 +442,26 @@ struct StudentView: View {
                 }
                 
                 if isValidSection {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: {
-                            insightSheet = true
-                        }, label: {
-                            Text(routineStore.studentRoutineSearchText).font(.callout.bold())
-                        })
-                        .contentShape(Rectangle())
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: {
+                                insightSheet = true
+                            }, label: {
+                                Text(routineStore.studentRoutineSearchText).font(.callout.bold())
+                            })
+                            .contentShape(Rectangle())
+                        }
+                        .matchedTransitionSource(id: "Insights", in: animation)
+                    } else {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            Button(action: {
+                                insightSheet = true
+                            }, label: {
+                                Text(routineStore.studentRoutineSearchText).font(.callout.bold())
+                            })
+                            .contentShape(Rectangle())
+                        }
                     }
-                    .matchedTransitionSource(id: "Insights", in: animation)
                 }
                 
                 ToolbarItem(placement: .title) {
@@ -470,3 +487,4 @@ struct StudentView: View {
         StudentView(isSearchActive: .constant(false))
     }
 }
+

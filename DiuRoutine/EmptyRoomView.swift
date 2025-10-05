@@ -9,6 +9,7 @@ struct EmptyRoomView: View {
     @Namespace private var topID
     @State private var animateContent = false
     @State private var showSettings = false
+    @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
     
     private let timeSlots = [
         "08:30 - 10:00",
@@ -83,10 +84,15 @@ struct EmptyRoomView: View {
         .sorted { timeToMinutes($0.startTime ?? "") < timeToMinutes($1.startTime ?? "") }
     }
     
+    @AppStorage("cStyle") private var cStyle: Bool = true
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                CalendarHeaderView2(selectedDate: $selectedDate)
+                cStyle ?
+                AnyView(CalendarHeaderView2(selectedDate: $selectedDate)) :
+                AnyView(CalendarHeaderView1(selectedDate: $selectedDate)) 
+                
                 
                 HStack(alignment: .center, spacing: 12) {
                     HStack(spacing: 6) {
@@ -153,7 +159,7 @@ struct EmptyRoomView: View {
                         
                             // Trigger animation after a brief delay
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
                                 animateContent = true
                             }
                         }
@@ -164,7 +170,7 @@ struct EmptyRoomView: View {
                         scrollToTop(proxy: proxy)
                         
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
                                 animateContent = true
                             }
                         }
@@ -173,13 +179,14 @@ struct EmptyRoomView: View {
                             // Animate when room count changes
                         animateContent = false
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+                            withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
                                 animateContent = true
                             }
                         }
                     }
                 }
             }
+            .preferredColorScheme(userTheme.colorScheme)
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(isPresented: $showSettings) {
                 SettingsView()
@@ -202,7 +209,7 @@ struct EmptyRoomView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.9)) {
                 animateContent = true
             }
         }

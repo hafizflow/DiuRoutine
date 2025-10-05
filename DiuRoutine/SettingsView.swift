@@ -1,21 +1,25 @@
 import SwiftUI
 import Toast
 
-
 struct SettingsView: View {
     @State private var showShareSheet: Bool = false
     @State private var appStoreVersion: String?
-    @State private var isLoadingVersion = false
+    @State private var isLoadingVersion: Bool = false
+    @State private var changeTheme: Bool = false
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var studentRoutineStore: StudentRoutineStore
     @EnvironmentObject var teachertRoutineStore: TeacherRoutineStore
     @State private var showClearDataAlert = false
+    @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
+    @Environment(\.colorScheme) private var scheme
+    @AppStorage("cStyle") private var cStyle: Bool = true
     
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
                     SettingsSection(title: "Preferences") {
+                        // Notification
                         SettingsRow(icon: "bell.fill", title: "Notifications", subtitle: "Push notifications") {
                             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                                let window = windowScene.windows.first {
@@ -37,12 +41,38 @@ struct SettingsView: View {
                             }
                         }
                         
+                        // Dark Mode
                         SettingsRow(icon: "moon.fill", title: "Dark Mode", subtitle: "Toggle dark mode") {
-                                // Handle dark mode tap
+                                changeTheme = true
                         }
                         
+                        // Clear Data
                         SettingsRow(icon: "arrow.trianglehead.2.clockwise.rotate.90.page.on.clipboard", title: "Clear Data", subtitle: "Clear Section/TI data") {
                             showClearDataAlert = true
+                        }
+                        
+                        // CStyle
+                        SettingsRow(icon: "calendar.badge.plus", title: "Calender Option", subtitle: "Change calender style") {
+                            cStyle.toggle()
+                            
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                
+                                let config = ToastConfiguration(
+                                    direction: .top,
+                                    dismissBy: [.time(time: 3.0), .swipe(direction: .natural), .longPress],
+                                    animationTime: 0.2,
+                                    attachTo: window
+                                )
+                                
+                                let toast = Toast.default(
+                                    image: UIImage(systemName: cStyle ? "calendar" : "ellipsis.calendar")!,
+                                    title: "Calender Style Changed",
+                                    subtitle: "Calender Style is now \(cStyle ? "Default" : "Standard")",
+                                    config: config
+                                )
+                                toast.show(haptic: .success)
+                            }
                         }
                     }
                     
@@ -69,7 +99,9 @@ struct SettingsView: View {
                         }
                         
                         SettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", subtitle: "Get help") {
-                                // Handle help tap
+                            if let url = URL(string: "https://diuroutinesite.netlify.app") {
+                                UIApplication.shared.open(url)
+                            }
                         }
                     }
                 }
@@ -104,7 +136,12 @@ struct SettingsView: View {
             } message: {
                 Text("Are you sure you want to clear all stored data?")
             }
-            
+            .preferredColorScheme(userTheme.colorScheme)
+            .sheet(isPresented: $changeTheme, content: {
+                ThemeChangeView(scheme: scheme)
+                    .presentationDetents([.height(410)])
+                    .presentationBackground(.clear)
+            })
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {

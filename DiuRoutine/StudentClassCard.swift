@@ -37,6 +37,8 @@ struct StudentClassCard: View {
     private var teacherRoom: String { mergedRoutine.teacherRoom.isEmpty ? "N/A" : mergedRoutine.teacherRoom }
     private var teacherInitial: String { mergedRoutine.teacherInitial.isEmpty ? "N/A" : mergedRoutine.teacherInitial }
     
+    @Environment(\.colorScheme) var colorScheme
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .center) {
@@ -54,7 +56,7 @@ struct StudentClassCard: View {
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
-                    .background(.secondary.opacity(0.2))
+                    .background(.secondary.opacity(colorScheme == .dark ? 0.15 : 0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 6))
             }
             
@@ -140,8 +142,20 @@ struct StudentClassCard: View {
         }
         .lineLimit(1)
         .padding()
-        .background(.secondary.opacity(0.2))
+        .background(
+            colorScheme == .dark
+            ? Color.secondary.opacity(0.25)
+            : Color.white
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(
+                    colorScheme == .light ? Color.gray.opacity(0.25) : Color.clear,
+                    lineWidth: 2
+                )
+        )
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
     }
 }
 

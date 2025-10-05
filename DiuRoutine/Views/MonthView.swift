@@ -5,7 +5,7 @@ struct MonthView: View {
     let dragProgress: CGFloat
     
     @Binding var focused: Week
-    @Binding var selectedDate: Date?
+    @Binding var selectedDate: Date
     
     var body: some View {
         VStack(spacing: .zero) {
@@ -18,11 +18,4 @@ struct MonthView: View {
     }
 }
 
-#Preview {
-    MonthView(
-        month: .init(from: .now, order: .current),
-        dragProgress: 1,
-        focused: .constant(.current),
-        selectedDate: .constant(nil)
-    )
-}
+

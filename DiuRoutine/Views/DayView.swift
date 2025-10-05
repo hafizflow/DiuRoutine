@@ -2,14 +2,14 @@ import SwiftUI
 
 struct DayView: View {
     let date: Date
-    @Binding var selectedDate: Date?
+    @Binding var selectedDate: Date
     @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         VStack(spacing: 12) {
             Text(Calendar.dayNumber(from: date))
                 .background {
-                    if let selectedDate, Calendar.current.isDate(date, inSameDayAs: selectedDate) {
+                    if Calendar.current.isDate(date, inSameDayAs: selectedDate) {
                         Circle()
                             .foregroundStyle(.teal)
                             .opacity(0.3)
@@ -33,8 +33,7 @@ struct DayView: View {
     }
     
     private var isSelected: Bool {
-        guard let selectedDate else { return false }
-        return Calendar.current.isDate(date, inSameDayAs: selectedDate)
+        Calendar.current.isDate(date, inSameDayAs: selectedDate)
     }
     
     private var selectedTextColor: Color {
@@ -44,9 +43,4 @@ struct DayView: View {
             return .primary
         }
     }
-}
-
-
-#Preview {
-    DayView(date: .now, selectedDate: .constant(nil))
 }

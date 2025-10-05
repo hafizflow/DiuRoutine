@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct CalendarHeaderView: View {
-    @Binding var selectedDate: Date?
+struct CalendarHeaderView1: View {
+    @Binding var selectedDate: Date
     @State private var title: String = Calendar.monthAndYear(from: .now)
     @State private var focusedWeek: Week = .current
     @State private var calendarType: CalendarType = .week
@@ -17,7 +17,7 @@ struct CalendarHeaderView: View {
         case week, month
     }
     
-    init(selectedDate: Binding<Date?>) {
+    init(selectedDate: Binding<Date>) {
         self._selectedDate = selectedDate
     }
     
@@ -27,7 +27,7 @@ struct CalendarHeaderView: View {
     }
     
     private func shouldHighlightSymbol(at index: Int) -> Bool {
-        guard let selection = selectedDate else { return false }
+        let selection = selectedDate
         return getWeekdayIndex(for: selection) == index
     }
     
@@ -36,17 +36,15 @@ struct CalendarHeaderView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {            
+        VStack(spacing: 0) {
             HStack {
-                Text(title).font(.title2.bold())
+                Text(title).font(.title2.bold()).foregroundStyle(.primary.opacity(0.8))
                 Spacer()
-                if let date = selectedDate {
-                    Text(date, format: .dateTime.day().weekday(.wide))
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                }
+                Text(selectedDate, format: .dateTime.day().weekday(.wide))
+                    .font(.headline)
+                    .foregroundColor(.primary.opacity(0.8))
             }
-            .padding(.vertical)
+            .padding(.bottom)
             .padding(.horizontal, 24)
             
             HStack {
@@ -93,15 +91,7 @@ struct CalendarHeaderView: View {
                 .padding(.bottom, 8)
                 .padding(.top, Constants.defaultPadding - 4)
         }
-        .background(
-            UnevenRoundedRectangle(
-                cornerRadii: .init(bottomLeading: 24, bottomTrailing: 24)
-            )
-            .fill(Color.gray.opacity(0.2))
-            .ignoresSafeArea(edges: .top)
-        )
         .onChange(of: selectedDate) { _, newValue in
-            guard let newValue else { return }
             title = Calendar.monthAndYear(from: newValue)
         }
         .gesture(

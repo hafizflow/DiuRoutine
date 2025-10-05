@@ -6,43 +6,44 @@ struct MonthCalendarView: View {
     
     @Binding var title: String
     @Binding var focused: Week
-    @Binding var selection: Date?
+    @Binding var selection: Date  // Changed from Date? to Date
     
     @State private var months: [Month]
     @State private var position: ScrollPosition
     @State private var calendarWidth: CGFloat = .zero
     
-    init(_ title: Binding<String>, selection: Binding<Date?>, focused: Binding<Week>, isDragging: Bool,
+    init(_ title: Binding<String>, selection: Binding<Date>, focused: Binding<Week>, isDragging: Bool,
          dragProgress: CGFloat) {
-            _title = title
-            _focused = focused
-            _selection = selection
-            self.isDragging = isDragging
-            self.dragProgress = dragProgress
+        _title = title
+        _focused = focused
+        _selection = selection
+        self.isDragging = isDragging
+        self.dragProgress = dragProgress
         
-            let creationDate = focused.wrappedValue.days.last
-            var currentMonth = Month(from: creationDate ?? .now, order: .current)
-            
-            if let selection = selection.wrappedValue,
-               let lastDayOfTheMonth = currentMonth.weeks.first?.days.last,
-               !Calendar.isSameMonth(lastDayOfTheMonth, selection),
-               let previousMonth = currentMonth.previousMonth
-            {
-                if focused.wrappedValue.days.contains(selection) {
-                    currentMonth = previousMonth
-                }
-            }
+        let creationDate = focused.wrappedValue.days.last
+        var currentMonth = Month(from: creationDate ?? .now, order: .current)
         
-            _months = State(
-                initialValue: [
-                    currentMonth.previousMonth,
-                    currentMonth,
-                    currentMonth.nextMonth
-                ].compactMap(\.self)
-            )
-            _position = State(initialValue: ScrollPosition(id: currentMonth.id))
+        let selection = selection.wrappedValue
+        
+        if let lastDayOfTheMonth = currentMonth.weeks.first?.days.last,
+           !Calendar.isSameMonth(lastDayOfTheMonth, selection),
+           let previousMonth = currentMonth.previousMonth
+        {
+        if focused.wrappedValue.days.contains(selection) {
+            currentMonth = previousMonth
+        }
+        }
+        
+        _months = State(
+            initialValue: [
+                currentMonth.previousMonth,
+                currentMonth,
+                currentMonth.nextMonth
+            ].compactMap(\.self)
+        )
+        _position = State(initialValue: ScrollPosition(id: currentMonth.id))
     }
-
+    
     
     var body: some View {
         ScrollView(.horizontal){
@@ -74,10 +75,9 @@ struct MonthCalendarView: View {
                   let focusedWeek = focusedMonth.weeks.first
             else { return }
             
-            if
-                let selection,
-                focusedMonth.weeks.flatMap(\.days).contains(selection),
-                let selectedWeek = focusedMonth.weeks.first(where: { $0.days.contains(selection) })
+                // Removed optional binding since selection is now non-optional
+            if focusedMonth.weeks.flatMap(\.days).contains(selection),
+               let selectedWeek = focusedMonth.weeks.first(where: { $0.days.contains(selection) })
             {
             focused = selectedWeek
             } else {
@@ -87,17 +87,20 @@ struct MonthCalendarView: View {
             title = Calendar.monthAndYear(from: focusedWeek.days.last!)
         }
         .onChange(of: selection) { _, newValue in
-            guard let date = newValue,
-                  let week = months.flatMap(\.weeks).first(where: { (week) -> Bool in
-                      week.days.contains(date)
-                  })
-            else { return }
-            focused = week
+                // newValue is now non-optional, so removed guard let
+            let week = months.flatMap(\.weeks).first(where: { (week) -> Bool in
+                week.days.contains(newValue)
+            })
+            
+            if let week {
+                focused = week
+            }
         }
         .onChange(of: dragProgress) { _, newValue in
             guard newValue == 1 else { return }
-            if let selection,
-               let currentMonth = months.first(where: { $0.id == (position.viewID as? String) }),
+            
+                // Removed optional binding since selection is now non-optional
+            if let currentMonth = months.first(where: { $0.id == (position.viewID as? String) }),
                currentMonth.weeks.flatMap(\.days).contains(selection),
                let newFocus = currentMonth.weeks.first(where: { $0.days.contains(selection) })
             {
@@ -137,4 +140,3 @@ extension MonthCalendarView {
         dragProgress: 1
     )
 }
-
