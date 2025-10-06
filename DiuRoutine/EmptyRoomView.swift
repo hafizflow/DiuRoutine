@@ -261,6 +261,7 @@ struct EmptyRoomView: View {
     // Room Card Component
 struct RoomCard: View {
     let room: RoutineDO
+    @Environment(\.colorScheme) var colorScheme
     
     private var cleanRoomName: String {
         let roomName = room.room ?? "Unknown"
@@ -311,7 +312,7 @@ struct RoomCard: View {
         .frame(height: 150)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color(.systemBackground))
+                .fill(Color(colorScheme == .light ?  Color.clear : Color.gray.opacity(0.15)))
                 .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
         )
         .overlay(

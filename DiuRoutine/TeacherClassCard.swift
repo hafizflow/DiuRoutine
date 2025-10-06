@@ -72,13 +72,13 @@ struct TeacherClassCard: View {
         .padding()
         .background(
             colorScheme == .dark
-            ? Color.secondary.opacity(0.25)
-            : Color.white
+            ? Color.secondary.opacity(0.15)
+            : Color.clear
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .stroke(
-                    colorScheme == .light ? Color.gray.opacity(0.2) : Color.clear,
+                    Color.gray.opacity(0.25),
                     lineWidth: 2
                 )
         )
