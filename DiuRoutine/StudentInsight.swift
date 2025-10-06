@@ -495,6 +495,41 @@ struct StudentInsight: View {
                 yPos += maxRowHeight * CGFloat(span)
                 index += span
             }
+            
+            
+                // Draw footer with logo and text at the bottom of the page
+            let footerY = pageRect.height - 50 // 50 points from bottom
+            let logoSize: CGFloat = 30
+            let paddingBetweenLogoAndText: CGFloat = 10 // Padding between logo and text
+            
+                // Calculate total width of logo + padding + text for proper centering
+            let footerText = "Made With DIU Routine"
+            let footerFont = UIFont.systemFont(ofSize: 12, weight: .medium)
+            let footerAttributes: [NSAttributedString.Key: Any] = [
+                .font: footerFont,
+                .foregroundColor: UIColor.gray
+            ]
+            let footerTextSize = footerText.size(withAttributes: footerAttributes)
+            let totalWidth = logoSize + paddingBetweenLogoAndText + footerTextSize.width
+            
+                // Calculate starting X position to center everything
+            let startX = (pageRect.width - totalWidth) / 2
+            
+                // Draw logo from Assets catalog
+            if let logoImage = UIImage(named: "app") {
+                let logoRect = CGRect(x: startX, y: footerY, width: logoSize, height: logoSize)
+                logoImage.draw(in: logoRect)
+            }
+            
+                // Draw "Made With DIU Routine" text
+            let footerTextX = startX + logoSize + paddingBetweenLogoAndText
+            let footerTextRect = CGRect(
+                x: footerTextX,
+                y: footerY + (logoSize - footerTextSize.height) / 2, // Vertically center with logo
+                width: footerTextSize.width,
+                height: footerTextSize.height
+            )
+            footerText.draw(in: footerTextRect, withAttributes: footerAttributes)
         }
         
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ClassRoutine - \(searchedSection).pdf")

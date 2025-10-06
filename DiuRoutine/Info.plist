@@ -3,6 +3,13 @@
 <plist version="1.0">
 <dict>
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>bg</string>
+		<key>UIImageName</key>
+		<string>splash</string>
+		<key>UILaunchScreen</key>
+		<dict/>
+	</dict>
 </dict>
 </plist>
