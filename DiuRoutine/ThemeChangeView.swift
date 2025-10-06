@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ThemeChangeView: View {
     var scheme: ColorScheme
-    @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
+    @AppStorage("userTheme") private var userTheme: Theme = .dark
         // For Sliding Effect
     @Namespace private var animation
     @State private var circleOffset: CGSize

@@ -296,7 +296,7 @@ struct SettingsRow: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 16)
-            .background(colorScheme == .dark ? .white.opacity(0.15) : .gray.opacity(0.1))
+            .background(colorScheme == .dark ? Color.secondary.opacity(0.2) : Color.gray.opacity(0.1))
         }
         .buttonStyle(.plain)
     }
