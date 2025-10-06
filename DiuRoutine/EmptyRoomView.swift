@@ -204,7 +204,7 @@ struct EmptyRoomView: View {
                 
                 ToolbarItem(placement: .principal) {
                     Text("Empty Rooms")
-                        .font(.headline.bold())
+                        .font(.title.bold())
                 }
             }
         }
