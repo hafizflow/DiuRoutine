@@ -27,6 +27,21 @@ enum CustomTab: String, CaseIterable, Hashable {
     }
 }
 
+    // MARK: - Coordinator (Moved outside to prevent compiler crash)
+final class CustomTabBarCoordinator: NSObject {
+    var activeTab: Binding<CustomTab>
+    
+    init(activeTab: Binding<CustomTab>) {
+        self.activeTab = activeTab
+        super.init()
+    }
+    
+    @objc func tabSelected(_ control: UISegmentedControl) {
+        activeTab.wrappedValue = CustomTab.allCases[control.selectedSegmentIndex]
+    }
+}
+
+    // MARK: - CustomTabBar
 struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     var size: CGSize
     var activeTint: Color = .teal.opacity(0.7)
@@ -34,8 +49,8 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     @Binding var activeTab: CustomTab
     @ViewBuilder var tabItemView: (CustomTab) -> TabItemView
     
-    func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+    func makeCoordinator() -> CustomTabBarCoordinator {
+        CustomTabBarCoordinator(activeTab: $activeTab)
     }
     
     func makeUIView(context: Context) -> UISegmentedControl {
@@ -43,19 +58,17 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
         let control = UISegmentedControl(items: items)
         control.selectedSegmentIndex = 0
         
-            // Converting Tab Item View into an image!
         for (index, tab) in CustomTab.allCases.enumerated() {
             let renderer = ImageRenderer(content: tabItemView(tab))
-                // 2 is enough, but you can change it as per your wish!
             renderer.scale = 2
-            let image = renderer.uiImage
-            control.setImage(image, forSegmentAt: index)
+            if let image = renderer.uiImage {
+                control.setImage(image, forSegmentAt: index)
+            }
         }
         
         DispatchQueue.main.async {
             for subview in control.subviews {
                 if subview is UIImageView && subview != control.subviews.last {
-                        // It's a background Image View!
                     subview.alpha = 0
                 }
             }
@@ -66,28 +79,19 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
             .foregroundColor: UIColor(activeTint)
         ], for: .selected)
         
-        control.addTarget(context.coordinator, action:
-                            #selector(context.coordinator.tabSelected(_:)), for: .valueChanged)
+        control.addTarget(context.coordinator,
+                          action: #selector(context.coordinator.tabSelected(_:)),
+                          for: .valueChanged)
         return control
     }
     
     func updateUIView(_ uiView: UISegmentedControl, context: Context) {
         uiView.selectedSegmentIndex = activeTab.index
+        context.coordinator.activeTab = $activeTab
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UISegmentedControl, context: Context) -> CGSize? {
         return size
-    }
-    
-    class Coordinator: NSObject {
-        var parent: CustomTabBar
-        init(parent: CustomTabBar) {
-            self.parent = parent
-        }
-        
-        @objc func tabSelected(_ control: UISegmentedControl) {
-            parent.activeTab = CustomTab.allCases[control.selectedSegmentIndex]
-        }
     }
 }
 
