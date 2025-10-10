@@ -3,11 +3,7 @@ import Lottie
 
 struct MaintenanceView: View {
     var body: some View {
-        VStack(spacing: 16) {
-//            Image(systemName: "wrench.and.screwdriver")
-//                .font(.system(size: 60))
-//                .foregroundColor(.orange)
-            
+        VStack(spacing: 16) {            
             LottieHelperView(fileName: "error.json", contentMode: .scaleAspectFit, playLoopMode: .loop, speed: 1).frame(maxHeight: 300)
             
             Text("Under Maintenance")

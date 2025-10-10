@@ -70,19 +70,19 @@ struct StudentView: View {
             return start1 < start2
         }
         
-            //            // Print filtered routines
-            //        print("=== Filtered Routines for \(routineStore.studentRoutineSearchText) on \(selectedDay) ===")
-            //        print("Total routines found: \(sorted.count)")
-            //        for (index, routine) in sorted.enumerated() {
-            //            print("\n[\(index + 1)]")
-            //            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
-            //            print("  Section: \(routine.section ?? "N/A")")
-            //            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
-            //            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
-            //            print("  Room: \(routine.room ?? "N/A")")
-            //            print("  Day: \(routine.day ?? "N/A")")
-            //        }
-            //        print("=====================================\n")
+                        // Print filtered routines
+//                    print("=== Filtered Routines for \(routineStore.studentRoutineSearchText) on \(selectedDay) ===")
+//                    print("Total routines found: \(sorted.count)")
+//                    for (index, routine) in sorted.enumerated() {
+//                        print("\n[\(index + 1)]")
+//                        print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+//                        print("  Section: \(routine.section ?? "N/A")")
+//                        print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+//                        print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
+//                        print("  Room: \(routine.room ?? "N/A")")
+//                        print("  Day: \(routine.day ?? "N/A")")
+//                    }
+//                    print("=====================================\n")
         
         return sorted
     }
@@ -113,6 +113,7 @@ struct StudentView: View {
     private struct RoutineGroupKey: Hashable {
         let teacherInitial: String
         let courseCode: String
+        let section: String
     }
     
     private let timeOrder = ["08:30", "10:00", "11:30", "01:00", "02:30", "04:00"]
@@ -123,7 +124,8 @@ struct StudentView: View {
         let grouped = Dictionary(grouping: routinesForDay) { routine in
             RoutineGroupKey(
                 teacherInitial: routine.initial ?? "N/A",
-                courseCode: routine.code ?? "N/A"
+                courseCode: routine.code ?? "N/A",
+                section: routine.section ?? "N/A"
             )
         }
         
@@ -213,7 +215,8 @@ struct StudentView: View {
             let dayGrouped = Dictionary(grouping: sortedDayRoutines) { routine in
                 RoutineGroupKey(
                     teacherInitial: routine.initial ?? "N/A",
-                    courseCode: routine.code ?? "N/A"
+                    courseCode: routine.code ?? "N/A",
+                    section: routine.section ?? "N/A"
                 )
             }
             
@@ -362,7 +365,8 @@ struct StudentView: View {
             let mergedForDay = Dictionary(grouping: routinesInDay) { routine in
                 RoutineGroupKey(
                     teacherInitial: routine.initial ?? "N/A",
-                    courseCode: routine.code ?? "N/A"
+                    courseCode: routine.code ?? "N/A",
+                    section: routine.section ?? "N/A"
                 )
             }
             totalClasses += mergedForDay.count

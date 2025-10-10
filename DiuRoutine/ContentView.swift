@@ -150,6 +150,9 @@ struct ContentView: View {
         Group {
             if versionStore.inMaintenance {
                 MaintenanceView()
+                    .task {
+                        await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+                    }
             } else {
                 TabView(selection: $activeTab) {
                     Tab(value: .student) {
