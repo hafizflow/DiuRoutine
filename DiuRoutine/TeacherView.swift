@@ -61,9 +61,14 @@ struct TeacherView: View {
         guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         guard isValidTeacher else { return [] }
         
+//        var filtered = routines.filter { routine in
+//            guard let initial = routine.initial else { return false }
+//            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
+//        }
+        
         var filtered = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
         let dayFormatter = DateFormatter()
@@ -82,19 +87,19 @@ struct TeacherView: View {
             return start1 < start2
         }
         
-            // Print filtered routines
-//        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
-//        print("Total routines found: \(sorted.count)")
-//        for (index, routine) in sorted.enumerated() {
-//            print("\n[\(index + 1)]")
-//            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
-//            print("  Section: \(routine.section ?? "N/A")")
-//            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
-//            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
-//            print("  Room: \(routine.room ?? "N/A")")
-//            print("  Day: \(routine.day ?? "N/A")")
-//        }
-//        print("=====================================\n")
+//             Print filtered routines
+        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
+        print("Total routines found: \(sorted.count)")
+        for (index, routine) in sorted.enumerated() {
+            print("\n[\(index + 1)]")
+            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+            print("  Section: \(routine.section ?? "N/A")")
+            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.initial ?? "N/A"))")
+            print("  Room: \(routine.room ?? "N/A")")
+            print("  Day: \(routine.day ?? "N/A")")
+        }
+        print("=====================================\n")
         
         return sorted
     }
@@ -506,7 +511,7 @@ struct TeacherView: View {
                         mergedRoutines: weeklyMergedRoutines
                     )
                     .navigationTransition(.zoom(sourceID: "Insights", in: animation))
-                    .presentationDetents([.medium])
+                    .presentationDetents([.fraction(0.6)])
                     .presentationDragIndicator(.visible)
             }
             .navigationBarTitleDisplayMode(.inline)

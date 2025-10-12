@@ -22,12 +22,12 @@ struct StudentView: View {
     @State private var selectedDate: Date = Date()
     @StateObject private var routineStore = StudentRoutineStore()
     @Query private var routines: [RoutineDO]
-    
     @Binding var isSearchActive: Bool
     @State var insightSheet: Bool = false
     @Namespace private var animation
     @State private var showSettings: Bool = false
     @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
+    @AppStorage("cStyle") private var cStyle: Bool = true
     
     private var allSections: [String] {
         let sections = routines.compactMap { $0.section }
@@ -70,19 +70,19 @@ struct StudentView: View {
             return start1 < start2
         }
         
-                        // Print filtered routines
-//                    print("=== Filtered Routines for \(routineStore.studentRoutineSearchText) on \(selectedDay) ===")
-//                    print("Total routines found: \(sorted.count)")
-//                    for (index, routine) in sorted.enumerated() {
-//                        print("\n[\(index + 1)]")
-//                        print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
-//                        print("  Section: \(routine.section ?? "N/A")")
-//                        print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
-//                        print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
-//                        print("  Room: \(routine.room ?? "N/A")")
-//                        print("  Day: \(routine.day ?? "N/A")")
-//                    }
-//                    print("=====================================\n")
+            // Print filtered routines
+            //                    print("=== Filtered Routines for \(routineStore.studentRoutineSearchText) on \(selectedDay) ===")
+            //                    print("Total routines found: \(sorted.count)")
+            //                    for (index, routine) in sorted.enumerated() {
+            //                        print("\n[\(index + 1)]")
+            //                        print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+            //                        print("  Section: \(routine.section ?? "N/A")")
+            //                        print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+            //                        print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.teacherInfo?.initial ?? routine.initial ?? "N/A"))")
+            //                        print("  Room: \(routine.room ?? "N/A")")
+            //                        print("  Day: \(routine.day ?? "N/A")")
+            //                    }
+            //                    print("=====================================\n")
         
         return sorted
     }
@@ -291,7 +291,7 @@ struct StudentView: View {
             }
         }
     }
-
+    
     private var totalWeeklyDurationForSection: String {
         guard !routineStore.studentRoutineSearchText.isEmpty else { return "0h 0m" }
         
@@ -375,7 +375,6 @@ struct StudentView: View {
         return totalClasses
     }
     
-    @AppStorage("cStyle") private var cStyle: Bool = true
     
     
     var body: some View {
@@ -429,7 +428,7 @@ struct StudentView: View {
                 )
                 
                 .navigationTransition(.zoom(sourceID: "Insights", in: animation))
-                .presentationDetents([.medium])
+                .presentationDetents([.fraction(0.6)])
                 .presentationDragIndicator(.visible)
             }
             .navigationBarTitleDisplayMode(.inline)

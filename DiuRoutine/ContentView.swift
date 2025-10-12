@@ -146,6 +146,8 @@ struct ContentView: View {
         "04:00 - 05:30"
     ]
     
+    @EnvironmentObject var versionManager: AppVersionManager
+    
     var body: some View {
         Group {
             if versionStore.inMaintenance {
@@ -185,6 +187,16 @@ struct ContentView: View {
                             .toolbarVisibility(.hidden, for: .tabBar)
                     }
                 }
+                .task {
+//                    await versionManager.fetchAppStoreVersion()
+                }
+//                .sheet(isPresented: $versionManager.showUpdateSheet) {
+//                    UpdateAvailableSheet()
+//                        .environmentObject(versionManager)
+//                        .presentationDetents([.height(400)])
+//                        .presentationBackground(.clear)
+//                        .presentationDragIndicator(.hidden)
+//                }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     CustomTabBarView()
                         .padding(.horizontal, 20)
