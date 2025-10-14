@@ -375,6 +375,8 @@ struct StudentView: View {
         return totalClasses
     }
     
+    @State private var updateAppInfo: AppVersionManager.ReturnResult?
+    
     
     
     var body: some View {

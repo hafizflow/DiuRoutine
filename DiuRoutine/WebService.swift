@@ -28,6 +28,11 @@ class RoutineVersionStore: ObservableObject {
         self.routineVersion = UserDefaults.standard.string(forKey: "routineVersion") ?? ""
         self.inMaintenance = UserDefaults.standard.bool(forKey: "inMaintenance")
     }
+    
+    func clearData() {
+        routineVersion = ""
+        UserDefaults.standard.removeObject(forKey: "routineVersion")
+    }
 }
 
 
@@ -46,10 +51,18 @@ class WebService {
                 // ✅ Then handle version update
             if versionResponse.data.version != versionStore.routineVersion {
                 print("New version detected! Updating database...")
-                await updateDataInDatabase(modelContext: modelContext)
                 
-                versionStore.routineVersion = versionResponse.data.version
-                print("Version updated to: \(versionResponse.data.version)")
+                    // ✅ Only update version if database update succeeds
+                let success = await updateDataInDatabase(modelContext: modelContext)
+                
+                if success {
+                    versionStore.routineVersion = versionResponse.data.version
+                    print("Version updated to: \(versionResponse.data.version)")
+                } else {
+                        // ⚠️ Database update failed - reset version
+                    versionStore.routineVersion = ""
+                    print("Database update failed. Version reset to empty.")
+                }
             } else {
                 print("Version is the same. No update needed.")
             }
@@ -78,7 +91,7 @@ class WebService {
         }
     }
     
-    func updateDataInDatabase(modelContext: ModelContext) async {
+    func updateDataInDatabase(modelContext: ModelContext) async -> Bool {
         do {
                 // First, delete all existing data
             try await clearAllData(modelContext: modelContext)
@@ -89,6 +102,11 @@ class WebService {
                 // Extract the data array from the response
             let itemData = routineResponse.data
             
+                // ✅ Check if data is empty
+            guard !itemData.isEmpty else {
+                print("No data found in the response")
+                return false
+            }
             
             for eachItem in itemData {
                 let itemToStore = RoutineDO(dto: eachItem)
@@ -97,9 +115,12 @@ class WebService {
             
             try modelContext.save()
             print("Database updated successfully with \(itemData.count) items")
+            return true
+            
         } catch {
             print("Error updating database")
             print(error.localizedDescription)
+            return false
         }
     }
     
@@ -137,7 +158,6 @@ class WebService {
         } catch {
             print("An error occured downloading the data")
         }
-        
         return nil
     }
 }

@@ -7,6 +7,8 @@ struct DiuRoutineApp: App {
         WindowGroup {
             ContentView()
                 .modelContainer(for: [RoutineDO.self, CourseInfoDO.self, TeacherInfoDO.self])
+                .environmentObject(StudentRoutineStore())
+                .environmentObject(TeacherRoutineStore())
         }
     }
 }

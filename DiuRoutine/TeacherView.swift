@@ -88,18 +88,18 @@ struct TeacherView: View {
         }
         
 //             Print filtered routines
-        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
-        print("Total routines found: \(sorted.count)")
-        for (index, routine) in sorted.enumerated() {
-            print("\n[\(index + 1)]")
-            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
-            print("  Section: \(routine.section ?? "N/A")")
-            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
-            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.initial ?? "N/A"))")
-            print("  Room: \(routine.room ?? "N/A")")
-            print("  Day: \(routine.day ?? "N/A")")
-        }
-        print("=====================================\n")
+//        print("=== Filtered Routines for \(searchText) on \(selectedDay) ===")
+//        print("Total routines found: \(sorted.count)")
+//        for (index, routine) in sorted.enumerated() {
+//            print("\n[\(index + 1)]")
+//            print("  Course: \(routine.courseInfo?.title ?? "N/A") - \(routine.courseInfo?.code ?? "N/A")")
+//            print("  Section: \(routine.section ?? "N/A")")
+//            print("  Time: \(routine.startTime ?? "N/A") - \(routine.endTime ?? "N/A")")
+//            print("  Teacher: \(routine.teacherInfo?.name ?? "N/A") (\(routine.initial ?? "N/A"))")
+//            print("  Room: \(routine.room ?? "N/A")")
+//            print("  Day: \(routine.day ?? "N/A")")
+//        }
+//        print("=====================================\n")
         
         return sorted
     }

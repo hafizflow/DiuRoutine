@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
     // Tab Items!
 enum CustomTab: String, CaseIterable, Hashable {
@@ -88,6 +89,15 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     func updateUIView(_ uiView: UISegmentedControl, context: Context) {
         uiView.selectedSegmentIndex = activeTab.index
         context.coordinator.activeTab = $activeTab
+        
+            // Re-render images with updated fill state
+        for (index, tab) in CustomTab.allCases.enumerated() {
+            let renderer = ImageRenderer(content: tabItemView(tab))
+            renderer.scale = 2
+            if let image = renderer.uiImage {
+                uiView.setImage(image, forSegmentAt: index)
+            }
+        }
     }
     
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UISegmentedControl, context: Context) -> CGSize? {
@@ -146,7 +156,10 @@ struct ContentView: View {
         "04:00 - 05:30"
     ]
     
-    @EnvironmentObject var versionManager: AppVersionManager
+    @State private var updateAppInfo: AppVersionManager.ReturnResult?
+    @State private var forcedAppUpdate: Bool = false
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .soft)
+    @Query private var routines: [RoutineDO]
     
     var body: some View {
         Group {
@@ -159,54 +172,51 @@ struct ContentView: View {
                 TabView(selection: $activeTab) {
                     Tab(value: .student) {
                         StudentView(isSearchActive: $isSectionSearchActive)
-                            .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
-                                Text(".")
-                                    .foregroundStyle(colorScheme == .light ? .white : .black)
-                                    .blendMode(.destinationOver)
-                            })
                             .toolbarVisibility(.hidden, for: .tabBar)
                     }
                     
                     Tab(value: .faculty) {
                         TeacherView(isSearchActive: $isTeacherSearchActive)
-                            .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
-                                Text(".")
-                                    .foregroundStyle(colorScheme == .light ? .white : .black)
-                                    .blendMode(.destinationOver)
-                            })
                             .toolbarVisibility(.hidden, for: .tabBar)
                     }
                     
                     Tab(value: .emptyRoom) {
                         EmptyRoomView(selectedTime: $selectedTime)
-                            .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
-                                Text(".")
-                                    .foregroundStyle(colorScheme == .light ? .white : .black)
-                                    .blendMode(.destinationOver)
-                            })
                             .toolbarVisibility(.hidden, for: .tabBar)
                     }
                 }
-                .task {
-//                    await versionManager.fetchAppStoreVersion()
-                }
-//                .sheet(isPresented: $versionManager.showUpdateSheet) {
-//                    UpdateAvailableSheet()
-//                        .environmentObject(versionManager)
-//                        .presentationDetents([.height(400)])
-//                        .presentationBackground(.clear)
-//                        .presentationDragIndicator(.hidden)
-//                }
+                .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
+                    Text(".")
+                        .foregroundStyle(colorScheme == .light ? .white : .black)
+                        .blendMode(.destinationOver)
+                })
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     CustomTabBarView()
                         .padding(.horizontal, 20)
-                        .padding(.bottom, 32)
+                        .padding(.bottom, 24)
                 }
                 .ignoresSafeArea(.all, edges: .bottom)
                 .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))
+                .refreshable {
+                    if routines.isEmpty {
+                        versionStore.clearData()
+                        await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+                    }
+                }
                 .task {
                     await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
                 }
+                .task {
+                    if let result = await AppVersionManager.shared.checkIfAppUpdateAvailable() {
+                        updateAppInfo = result
+                    }
+                    else {
+                        print("No Updates Available")
+                    }
+                }
+                .sheet(item: $updateAppInfo, content: { info in
+                    UpdateAvailableSheet(appInfo: info, forceUpdate: forcedAppUpdate)
+                })
                 .onAppear {
                     if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
                         activeTab = savedTab
@@ -240,7 +250,7 @@ struct ContentView: View {
                 }
             }
         }
-        .frame(height: 60)
+        .frame(height: 65)
     }
     
     @ViewBuilder
@@ -255,7 +265,7 @@ struct ContentView: View {
                         .font(.system(size: 10))
                         .fontWeight(.medium)
                 }
-                .symbolVariant(.fill)
+                .symbolVariant(tab == activeTab ? .fill : .none)
                 .frame(maxWidth: .infinity)
             }
             .compatibleGlassEffect()
@@ -278,7 +288,7 @@ struct ContentView: View {
                                 .font(.system(size: 22, weight: .medium))
                         }
                         .foregroundStyle(.primary)
-                        .frame(width: 60, height: 60)
+                        .frame(width: 65, height: 65)
                         .contentShape(Rectangle())
                     } else {
                         Button {
@@ -292,7 +302,7 @@ struct ContentView: View {
                                 .font(.system(size: 22, weight: .medium))
                         }
                         .foregroundStyle(.primary)
-                        .frame(width: 60, height: 60)
+                        .frame(width: 65, height: 65)
                         .contentShape(Rectangle())
                     }
                 }
