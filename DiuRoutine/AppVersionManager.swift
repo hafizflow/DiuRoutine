@@ -52,10 +52,10 @@ class AppVersionManager: ObservableObject {
         }
     }
     
-//    var bundleID: String? { return Bundle.main.bundleIdentifier }
-    var bundleID: String? {
-        return "Routine.Viewer.DIU.DIU-Routine"
-    }
+    var bundleID: String? { return Bundle.main.bundleIdentifier }
+//    var bundleID: String? {
+//        return "Routine.Viewer.DIU.DIU-Routine"
+//    }
     
     struct ReturnResult: Identifiable {
         private(set) var id: String = UUID().uuidString

@@ -25,7 +25,7 @@ struct InputStepView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(userType == .student ? "Enter your section" : "Enter teacher initial")
                     .font(.title2.bold())
-                Text(userType == .student ? "Example: 61_N, 62_D" : "Example: SEA, MZJ")
+                Text(userType == .student ? "Example: 61_N, 62_D" : "Example: SEA, MJZ")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }

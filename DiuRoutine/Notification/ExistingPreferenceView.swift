@@ -18,12 +18,12 @@ struct ExistingPreferenceView: View {
                 // Icon
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.1))
+                    .fill(Color.accentColor.opacity(0.15))
                     .frame(width: 100, height: 100)
                 
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 50))
-                    .foregroundStyle(.teal.opacity(0.15))
+                    .foregroundStyle(.teal)
             }
             .padding(.top, 20)
             
