@@ -1,5 +1,6 @@
 import SwiftUI
 import Toast
+import SwiftData
 
 struct SettingsView: View {
     @State private var showShareSheet: Bool = false
@@ -14,32 +15,72 @@ struct SettingsView: View {
     @Environment(\.colorScheme) private var scheme
     @AppStorage("cStyle") private var cStyle: Bool = true
     
+    @StateObject private var routineVersionStore = RoutineVersionStore()
+    @StateObject private var notificationManager = NotificationManager.shared
+    
+    @State private var isNotificationsOn: Bool = NotificationManager.shared.preference?.isEnabled ?? true
+    @Query private var routines: [RoutineDO]
+
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 32) {
                     SettingsSection(title: "Preferences") {
-                        // Notification
-                        SettingsRow(icon: "bell.fill", title: "Notifications", subtitle: "Push notifications") {
-                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let window = windowScene.windows.first {
+                            // Notification
+                        NavigationLink {
+                            NotificationOnboardingView()
+                                .environmentObject(routineVersionStore)
+                                .environmentObject(notificationManager)
+                        } label: {
+                            HStack(spacing: 15) {
+                                Image(systemName: "bell.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(scheme == .dark ? .white.opacity(0.8) : .teal)
+                                    .frame(width: 24)
                                 
-                                let config = ToastConfiguration(
-                                    direction: .top,
-                                    dismissBy: [.time(time: 3.0), .swipe(direction: .natural), .longPress],
-                                    animationTime: 0.2,
-                                    attachTo: window
-                                )
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Notifications")
+                                        .font(.body)
+                                        .fontWeight(.medium)
+                                        .foregroundStyle(scheme == .dark ? .white : .black)
+                                    
+                                    Text("Push notifications")
+                                        .font(.caption)
+                                        .foregroundStyle(scheme == .dark ? .white.opacity(0.6) : .black.opacity(0.5))
+                                }
                                 
-                                let toast = Toast.default(
-                                    image: UIImage(systemName: "sparkles.2")!,
-                                    title: "Comming Soon",
-                                    subtitle: "Notificatio will be added soon",
-                                    config: config
-                                )
-                                toast.show(haptic: .success)
+                                Spacer()
+                                
+
+                                if NotificationManager.shared.preference != nil {
+                                    Toggle(isOn: $isNotificationsOn) {}
+                                    .onChange(of: isNotificationsOn) { _, newValue in
+                                        Task {
+                                            var currentPref = NotificationManager.shared.preference
+                                            currentPref?.isEnabled = newValue
+                                            if let updated = currentPref {
+                                                NotificationManager.shared.savePreference(updated)
+                                                if newValue {
+                                                    _ = await NotificationManager.shared.scheduleNotifications(routines: routines)
+                                                } else {
+                                                    UNUserNotificationCenter.current().removeAllPendingNotificationRequests()
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundStyle(scheme == .dark ? .white.opacity(0.4) : .teal)
+                                }
                             }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 16)
+                            .background(scheme == .dark ? Color.secondary.opacity(0.2) : Color.gray.opacity(0.1))
                         }
+                        .buttonStyle(.plain)
+                        
                         
                         // Dark Mode
                         SettingsRow(icon: "moon.fill", title: "Dark Mode", subtitle: "Toggle dark mode") {
