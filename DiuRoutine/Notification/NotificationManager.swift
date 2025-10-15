@@ -65,7 +65,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 .requestAuthorization(options: [.alert, .sound, .badge])
             guard granted else { return false }
         } catch {
-            print("Permission error: \(error)")
             return false
         }
         
@@ -99,9 +98,6 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
         
             // Schedule new notifications using merged routine logic
         await scheduleNotificationsForRoutines(filteredRoutines)
-        
-            // Print weekly schedule summary
-        printWeeklySchedule(filteredRoutines)
         
         return true
     }
@@ -186,9 +182,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 content.title = "Class Starting in 15 Minutes"
                 
                 if preference?.userType == .student {
-                    content.body = "\(startTime) - \(endTime) | \(courseTitle) (\(courseCode)) | \(teacherName) | Room \(room)"
+                    content.body = "Room: \(room) (\(courseCode))\nTime: \(startTime) - \(endTime)\nSection: \(section)\nTeacher: \(teacherName)"
                 } else {
-                    content.body = "\(startTime) - \(endTime) | \(courseTitle) (\(courseCode)) | Section \(section) | Room \(room)"
+                    content.body = "Room: \(room) (\(courseCode))\nTime: \(startTime) - \(endTime)\nSection: \(section)\nCourse: \(courseTitle)"
                 }
                 
                 content.sound = .default
@@ -220,9 +216,8 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 
                 do {
                     try await center.add(request)
-                    print("✅ Scheduled: \(dayName) at \(String(format: "%02d:%02d", notifHour, notifMinute)) for class starting at \(startTime)")
                 } catch {
-                    print("❌ Error scheduling notification: \(error)")
+                        // Silently handle scheduling errors
                 }
             }
         }
@@ -239,121 +234,5 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
             case "SATURDAY": return 7
             default: return 1
         }
-    }
-    
-        // MARK: - Weekly Schedule Printer
-    private func printWeeklySchedule(_ routines: [RoutineDO]) {
-        let timeOrder = ["08:30", "10:00", "11:30", "01:00", "02:30", "04:00"]
-        let dayOrder = ["SATURDAY", "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY"]
-        
-        print("\n" + String(repeating: "=", count: 80))
-        print("📅 WEEKLY CLASS SCHEDULE")
-        if let pref = preference {
-            if pref.userType == .student {
-                print("👨‍🎓 Student - Section: \(pref.identifier)\(pref.subIdentifier.map { " (\($0))" } ?? "")")
-            } else {
-                print("👨‍🏫 Teacher - Initial: \(pref.identifier)")
-            }
-        }
-        print(String(repeating: "=", count: 80) + "\n")
-        
-            // Group by day
-        let groupedByDay = Dictionary(grouping: routines) { $0.day ?? "Unknown" }
-        
-            // Process each day in order
-        for dayName in dayOrder {
-            guard let dayRoutines = groupedByDay[dayName] else { continue }
-            
-            print("📆 \(dayName)")
-            print(String(repeating: "-", count: 80))
-            
-                // Define grouping key
-            struct GroupKey: Hashable {
-                let section: String
-                let code: String
-                let initial: String
-            }
-            
-            let grouped: [GroupKey: [RoutineDO]]
-            
-            if preference?.userType == .student {
-                grouped = Dictionary(grouping: dayRoutines) { routine in
-                    GroupKey(
-                        section: routine.section ?? "N/A",
-                        code: routine.code ?? "N/A",
-                        initial: routine.initial ?? "N/A"
-                    )
-                }
-            } else {
-                grouped = Dictionary(grouping: dayRoutines) { routine in
-                    GroupKey(
-                        section: routine.section ?? "N/A",
-                        code: routine.code ?? "N/A",
-                        initial: "N/A"
-                    )
-                }
-            }
-            
-                // Merge and sort
-            var mergedClasses: [(startTime: String, endTime: String, info: String)] = []
-            
-            for (_, group) in grouped {
-                let sorted = group.sorted { lhs, rhs in
-                    guard let idx1 = timeOrder.firstIndex(of: lhs.startTime ?? ""),
-                          let idx2 = timeOrder.firstIndex(of: rhs.startTime ?? "") else {
-                        return (lhs.startTime ?? "") < (rhs.startTime ?? "")
-                    }
-                    return idx1 < idx2
-                }
-                
-                guard let first = sorted.first,
-                      let last = sorted.last,
-                      let startTime = first.startTime,
-                      let endTime = last.endTime else { continue }
-                
-                let courseTitle = first.courseInfo?.title ?? "Unknown"
-                let courseCode = first.code ?? "N/A"
-                let room = first.room ?? "TBA"
-                
-                let info: String
-                if preference?.userType == .student {
-                    let teacherName = first.teacherInfo?.name ?? first.initial ?? "Unknown"
-                    info = "\(courseTitle) (\(courseCode)) | \(teacherName) | Room \(room)"
-                } else {
-                    let section = first.section ?? "N/A"
-                    info = "\(courseTitle) (\(courseCode)) | Section \(section) | Room \(room)"
-                }
-                
-                mergedClasses.append((startTime, endTime, info))
-            }
-            
-                // Sort by start time
-            mergedClasses.sort { a, b in
-                guard let idxA = timeOrder.firstIndex(of: a.startTime),
-                      let idxB = timeOrder.firstIndex(of: b.startTime) else {
-                    return a.startTime < b.startTime
-                }
-                return idxA < idxB
-            }
-            
-                // Print classes
-            if mergedClasses.isEmpty {
-                print("   No classes scheduled")
-            } else {
-                for (index, classInfo) in mergedClasses.enumerated() {
-                    print("   \(index + 1). ⏰ \(classInfo.startTime) - \(classInfo.endTime)")
-                    print("      📚 \(classInfo.info)")
-                    if index < mergedClasses.count - 1 {
-                        print("")
-                    }
-                }
-            }
-            
-            print("")
-        }
-        
-        print(String(repeating: "=", count: 80))
-        print("✅ Total notifications scheduled: \(routines.count) classes merged into optimized schedule")
-        print(String(repeating: "=", count: 80) + "\n")
     }
 }

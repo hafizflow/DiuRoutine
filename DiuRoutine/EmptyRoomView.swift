@@ -190,8 +190,6 @@ struct EmptyRoomView: View {
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(isPresented: $showSettings) {
                 SettingsView()
-                    .environmentObject(StudentRoutineStore())
-                    .environmentObject(TeacherRoutineStore())
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {

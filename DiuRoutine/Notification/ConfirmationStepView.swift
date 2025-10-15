@@ -17,7 +17,7 @@ struct ConfirmationStepView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Confirm setup")
                     .font(.title2.bold())
-                Text("You'll receive notifications 10 minutes before each class")
+                Text("You'll receive notifications 15 minutes before each class")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -30,7 +30,7 @@ struct ConfirmationStepView: View {
                     InfoRow(label: "Variant", value: variant)
                 }
                 
-                InfoRow(label: "Notification Time", value: "10 minutes before class")
+                InfoRow(label: "Notification Time", value: "15 minutes before class")
             }
             .padding()
             .background(Color(UIColor.secondarySystemGroupedBackground))

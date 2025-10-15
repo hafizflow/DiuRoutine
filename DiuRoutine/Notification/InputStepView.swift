@@ -1,10 +1,3 @@
-//
-//  InputStepView.swift
-//  DiuRoutine
-//
-//  Created by Hafizur Rahman on 15/10/25.
-//
-
 import SwiftUI
 
 struct InputStepView: View {
@@ -32,15 +25,20 @@ struct InputStepView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text(userType == .student ? "Enter your section" : "Enter teacher initial")
                     .font(.title2.bold())
-                Text(userType == .student ? "e.g., 61_N" : "e.g., MMA")
+                Text(userType == .student ? "Example: 61_N, 62_D" : "Example: MMA, MZJ")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
             
             TextField(userType == .student ? "Section" : "Initial", text: $searchText)
-                .textFieldStyle(.roundedBorder)
+                .padding()
+                .frame(height: 45)
                 .textInputAutocapitalization(.characters)
                 .autocorrectionDisabled()
+                .background(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(Color.gray.opacity(0.6), lineWidth: 1)
+                )
             
             if !searchText.isEmpty && !filteredSuggestions.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
@@ -52,7 +50,7 @@ struct InputStepView: View {
                     
                     ScrollView {
                         VStack(spacing: 0) {
-                            ForEach(filteredSuggestions.prefix(5), id: \.self) { suggestion in
+                            ForEach(filteredSuggestions.prefix(20), id: \.self) { suggestion in
                                 Button {
                                     if userType == .student {
                                         searchText = suggestion
@@ -65,12 +63,11 @@ struct InputStepView: View {
                                 } label: {
                                     HStack {
                                         Text(suggestion)
-                                            .foregroundStyle(.primary)
                                         Spacer()
                                         Image(systemName: "arrow.up.left")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
                                     }
+                                    .foregroundStyle(.primary)
                                     .padding()
                                     .contentShape(Rectangle())
                                 }
@@ -81,11 +78,12 @@ struct InputStepView: View {
                             }
                         }
                     }
-                    .frame(maxHeight: 200)
+                    .frame(maxHeight: 160)
                 }
                 .background(Color(UIColor.secondarySystemGroupedBackground))
                 .cornerRadius(12)
             }
         }
+        .padding(.horizontal, 8)
     }
 }

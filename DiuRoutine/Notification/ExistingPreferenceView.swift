@@ -74,7 +74,7 @@ struct ExistingPreferenceView: View {
                         SettingRow(
                             icon: "clock.fill",
                             label: "Timing",
-                            value: "10 min before class"
+                            value: "15 min before class"
                         )
                     }
                 }
@@ -108,7 +108,9 @@ struct ExistingPreferenceView: View {
                 }
             }
             .padding(.bottom)
+            .padding(.horizontal, 8)
         }
+        .padding(.horizontal)
     }
 }
 

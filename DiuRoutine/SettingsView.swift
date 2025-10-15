@@ -1,6 +1,8 @@
 import SwiftUI
 import Toast
 import SwiftData
+import WebKit
+import StoreKit
 
 struct SettingsView: View {
     @State private var showShareSheet: Bool = false
@@ -8,9 +10,6 @@ struct SettingsView: View {
     @State private var isLoadingVersion: Bool = false
     @State private var changeTheme: Bool = false
     @Environment(\.dismiss) var dismiss
-    @EnvironmentObject var studentRoutineStore: StudentRoutineStore
-    @EnvironmentObject var teachertRoutineStore: TeacherRoutineStore
-    @State private var showClearDataAlert = false
     @AppStorage("userTheme") private var userTheme: Theme = .systemDefault
     @Environment(\.colorScheme) private var scheme
     @AppStorage("cStyle") private var cStyle: Bool = true
@@ -20,6 +19,7 @@ struct SettingsView: View {
     
     @State private var isNotificationsOn: Bool = NotificationManager.shared.preference?.isEnabled ?? true
     @Query private var routines: [RoutineDO]
+    @State private var showWebView: Bool = false
 
     
     var body: some View {
@@ -87,11 +87,6 @@ struct SettingsView: View {
                                 changeTheme = true
                         }
                         
-                        // Clear Data
-                        SettingsRow(icon: "arrow.trianglehead.2.clockwise.rotate.90.page.on.clipboard", title: "Clear Data", subtitle: "Clear Section/TI data") {
-                            showClearDataAlert = true
-                        }
-                        
                         // CStyle
                         SettingsRow(icon: "calendar.badge.plus", title: "Calender Option", subtitle: "Change calender style") {
                             cStyle.toggle()
@@ -123,8 +118,12 @@ struct SettingsView: View {
                             showShareSheet = true
                         }
                         
-                        SettingsRow(icon: "star.fill", title: "Rate & Feedback", subtitle: "Rate in App Store") {
-                            if let url = URL(string: "https://apps.apple.com/us/app/diu-routine-viewer/id6748752277") {
+                        SettingsRow(
+                            icon: "star.fill",
+                            title: "Rate & Feedback",
+                            subtitle: "Rate in App Store"
+                        ) {
+                            if let url = URL(string: "https://apps.apple.com/app/id6748752277?action=write-review") {
                                 UIApplication.shared.open(url)
                             }
                         }
@@ -140,42 +139,12 @@ struct SettingsView: View {
                         }
                         
                         SettingsRow(icon: "questionmark.circle.fill", title: "Help & Support", subtitle: "Get help") {
-                            if let url = URL(string: "https://diuroutinesite.netlify.app") {
-                                UIApplication.shared.open(url)
-                            }
+                            showWebView = true
                         }
                     }
                 }
                 .padding()
                 .padding(.horizontal, 8)
-            }
-            .alert("Clear Data", isPresented: $showClearDataAlert) {
-                Button("Cancel", role: .cancel) { }.tint(.primary).contentShape(Rectangle())
-                Button("Clear", role: .destructive) {
-                    studentRoutineStore.clearData()
-                    teachertRoutineStore.clearData()
-                    
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let window = windowScene.windows.first {
-                        
-                        let config = ToastConfiguration(
-                            direction: .top,
-                            dismissBy: [.time(time: 3.0), .swipe(direction: .natural), .longPress],
-                            animationTime: 0.2,
-                            attachTo: window
-                        )
-                        
-                        let toast = Toast.default(
-                            image: UIImage(systemName: "trash")!,
-                            title: "Data Cleared Successfully",
-                            subtitle: "All stored data has been removed",
-                            config: config
-                        )
-                        toast.show(haptic: .success)
-                    }
-                }
-            } message: {
-                Text("Are you sure you want to clear all stored data?")
             }
             .preferredColorScheme(userTheme.colorScheme)
             .sheet(isPresented: $changeTheme, content: {
@@ -193,9 +162,10 @@ struct SettingsView: View {
                     Button("", systemImage: "multiply") {
                         dismiss()
                     }.tint(.primary).contentShape(Rectangle())
-                    
-                    
                 }
+            }
+            .sheet(isPresented: $showWebView) {
+                WebViewSheet()
             }
             .sheet(isPresented: $showShareSheet) {
                 ActivityView(activityItems: [
@@ -363,4 +333,56 @@ struct ActivityView: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+
+
+struct WebView: UIViewRepresentable {
+    func makeUIView(context: Context) -> WKWebView {
+        return WKWebView()
+    }
+    
+    func updateUIView(_ webView: WKWebView, context: Context) {
+        let url = URL(string: "https://diuroutinesite.netlify.app")
+        if let url = url {
+            let request = URLRequest(url: url)
+            webView.load(request)
+        }
+    }
+}
+
+
+struct WebViewSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            WebView()
+                .ignoresSafeArea()
+            
+            if #available(iOS 26.0, *) {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 20, weight: .medium))
+                        .frame(width: 45, height: 45)
+                        .glassEffect(.clear)
+                        .clipShape(Circle())
+                }
+                .foregroundStyle(.white)
+                .padding(.trailing, 16)
+                .zIndex(1)
+            } else {
+                Button(action: { dismiss() }) {
+                    Image(systemName: "chevron.backward")
+                        .font(.system(size: 20, weight: .medium))
+                        .frame(width: 45, height: 45)
+                        .background(Color(.systemGray5).opacity(0.8))
+                        .clipShape(Circle())
+                }
+                .foregroundStyle(.white)
+                .padding(.trailing, 16)
+                .zIndex(1)
+            }
+        }
+    }
 }

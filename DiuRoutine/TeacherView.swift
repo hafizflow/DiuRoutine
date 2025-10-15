@@ -496,8 +496,6 @@ struct TeacherView: View {
             }
             .fullScreenCover(isPresented: $showSettings) {
                 SettingsView()
-                    .environmentObject(StudentRoutineStore())
-                    .environmentObject(TeacherRoutineStore())
             }
             .sheet(isPresented: $insightSheet) {
                     TeacherInsights(

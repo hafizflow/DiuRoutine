@@ -151,25 +151,35 @@ struct NotificationOnboardingView: View {
                         .padding()
                     }
                     
-                        // Navigation buttons (hide for existing preference screen)
+//                         Navigation buttons (hide for existing preference screen)
                     if currentStep != .existingPreference {
                         HStack(spacing: 15) {
                             if currentStep != .userType {
-                                Button("Back") {
-                                    goBack()
+                                Button(action: goBack) {
+                                    Text("Back")
+                                        .font(.headline)
+                                        .frame(maxWidth: .infinity)
+                                        .padding()
+                                        .foregroundColor(.primary)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.gray, lineWidth: 1)
+                                        )
                                 }
-                                .buttonStyle(.bordered)
-                                .frame(maxWidth: .infinity)
+                                .background(Color.clear)
                             }
                             
-                            Button(currentStep == .confirmation ? "Enable Notifications" : "Next") {
-                                goNext()
+                            Button(action: goNext) {
+                                Text(currentStep == .confirmation ? "Enable Notifications" : "Next")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding()
+                                    .background(.teal.opacity(0.8))
+                                    .cornerRadius(12)
                             }
-                            .buttonStyle(.borderedProminent)
-                            .frame(maxWidth: .infinity)
                             .disabled(!canProceed())
                         }
-                        .frame(maxWidth: .infinity)
                         .padding(.horizontal)
                         .padding(.bottom)
                     }
