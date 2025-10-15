@@ -244,8 +244,6 @@ struct SettingsView: View {
 
 #Preview {
     SettingsView()
-        .environmentObject(StudentRoutineStore())
-        .environmentObject(TeacherRoutineStore())
 }
 
 

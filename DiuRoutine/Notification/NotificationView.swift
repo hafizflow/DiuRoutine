@@ -188,13 +188,7 @@ struct NotificationOnboardingView: View {
             .navigationTitle("Class Notifications")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if currentStep == .existingPreference {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Close") {
-                            dismiss()
-                        }
-                    }
-                } else {
+                if currentStep != .existingPreference {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Skip") {
                             dismiss()

@@ -38,7 +38,7 @@ struct SelectionCard: View {
                 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.teal)
+                        .foregroundStyle(.teal.opacity(0.8))
                 }
             }
             .padding()

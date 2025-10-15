@@ -23,7 +23,7 @@ struct ExistingPreferenceView: View {
                 
                 Image(systemName: "bell.badge.fill")
                     .font(.system(size: 50))
-                    .foregroundStyle(.teal)
+                    .foregroundStyle(.teal.opacity(0.15))
             }
             .padding(.top, 20)
             
@@ -93,7 +93,7 @@ struct ExistingPreferenceView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accentColor)
+                        .background(Color.accentColor.opacity(0.8))
                         .cornerRadius(12)
                 }
                 
@@ -103,7 +103,7 @@ struct ExistingPreferenceView: View {
                         .foregroundColor(.accentColor)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.accentColor.opacity(0.1))
+                        .background(Color.accentColor.opacity(0.15))
                         .cornerRadius(12)
                 }
             }
