@@ -170,7 +170,7 @@ struct NotificationOnboardingView: View {
                             }
                             
                             Button(action: goNext) {
-                                Text(currentStep == .confirmation ? "Enable Notifications" : "Next")
+                                Text(currentStep == .confirmation ? "Done" : "Next")
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)

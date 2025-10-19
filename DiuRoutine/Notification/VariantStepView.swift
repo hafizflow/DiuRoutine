@@ -23,12 +23,16 @@ struct VariantStepView: View {
             }
             
             VStack(spacing: 12) {
-                ForEach(variants, id: \.self) { variant in
+                ForEach(variants.indices, id: \.self) { index in
+                    let variant = variants[index]
+                    let isSelected = selectedVariant == variant
+                    let iconName = "\(index + 1).circle" + (isSelected ? ".fill" : "")
+                    
                     SelectionCard(
-                        icon: "checkmark.circle.fill",
+                        icon: iconName,
                         title: variant,
                         subtitle: "Only \(variant) classes",
-                        isSelected: selectedVariant == variant
+                        isSelected: isSelected
                     ) {
                         selectedVariant = variant
                     }

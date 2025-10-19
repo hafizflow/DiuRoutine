@@ -182,9 +182,9 @@ class NotificationManager: NSObject, ObservableObject, UNUserNotificationCenterD
                 content.title = "Class Starting in 15 Minutes"
                 
                 if preference?.userType == .student {
-                    content.body = "Course: \(courseTitle) - \(courseCode)\n Room: \(room)\nTime: \(startTime) - \(endTime)\nSection: \(section)\nTeacher: \(teacherName)"
+                    content.body = "Course: \(courseTitle) - \(courseCode)\nRoom: \(room)\nTime: \(startTime) - \(endTime)\nSection: \(section)\nTeacher: \(teacherName)"
                 } else {
-                    content.body = "Course: \(courseTitle) - \(courseCode)\n Room: \(room)\nTime: \(startTime) - \(endTime)\nSection: \(section)\nTeacher: \(teacherName)"
+                    content.body = "Course: \(courseTitle) - \(courseCode)\nRoom: \(room)\nTime: \(startTime) - \(endTime)\nSection: \(section)\nTeacher: \(teacherName)"
                 }
                 
                 content.sound = .default

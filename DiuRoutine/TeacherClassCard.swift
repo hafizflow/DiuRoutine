@@ -42,7 +42,7 @@ struct TeacherClassCard: View {
                 
                 Spacer()
                 
-                HStack(alignment: .center, spacing: 20) {
+                HStack(alignment: .center, spacing: 10) {
                     Text("CCode:")
                         .font(.system(size: 16))
                         .fontWeight(.semibold)

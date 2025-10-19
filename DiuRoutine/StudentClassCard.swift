@@ -77,7 +77,7 @@ struct StudentClassCard: View {
                 
                 Spacer()
                 
-                HStack(alignment: .center, spacing: 20) {
+                HStack(alignment: .center, spacing: 10) {
                     Text("Teacher:")
                         .font(.system(size: 16))
                         .fontWeight(.semibold)
