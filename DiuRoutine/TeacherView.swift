@@ -514,17 +514,6 @@ struct TeacherView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    if isSearchActive {
-                        Button(action: {
-                            isSearchActive = false
-                        }, label: {
-                            Text("Done")
-                        })
-                    }
-                }
-                
                 if isValidTeacher {
                     if #available(iOS 26.0, *) {
                         ToolbarItem(placement: .topBarTrailing) {
@@ -560,10 +549,6 @@ struct TeacherView: View {
                     .contentShape(Rectangle())
                 }
             }
-        }
-        .contentShape(Rectangle())
-        .onTapGesture {
-            isSearchActive = false
         }
     }
 }

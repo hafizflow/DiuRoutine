@@ -173,7 +173,7 @@ struct WeekRowView: View {
     private var datesForWeek: [Date] {
         (0..<7).compactMap { index in
             let date = calendar.date(byAdding: .day, value: index, to: baseDate)
-            if let date, calendar.component(.weekday, from: date) != 6 { // 6 = Friday
+            if let date, calendar.component(.weekday, from: date) != 6 { 
                 return date
             }
             return nil
@@ -183,17 +183,20 @@ struct WeekRowView: View {
     var body: some View {
         HStack(spacing: 8) {
             ForEach(datesForWeek, id: \.timeIntervalSince1970) { date in
-                DayView2(
-                    date: date,
-                    isSelected: calendar.isDate(date, inSameDayAs: selectedDate)
-                )
-                .onTapGesture {
+                Button {
                     impactFeedback.impactOccurred()
                     selectedDate = date
+                } label: {
+                    DayView2(
+                        date: date,
+                        isSelected: calendar.isDate(date, inSameDayAs: selectedDate)
+                    )
                 }
+                .buttonStyle(.plain)
             }
         }
     }
+
 }
 
 struct DayView2: View {

@@ -226,17 +226,9 @@ struct SettingsView: View {
     private func checkForUpdate() async {
         await fetchAppStoreVersion()
         
-        guard let storeVersion = appStoreVersion,
-              let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String else {
-            return
-        }
-        
-        if storeVersion.compare(currentVersion, options: .numeric) == .orderedDescending {
-                // Update available - you can show an alert here if needed
-            if let url = URL(string: "https://apps.apple.com/us/app/diu-routine-viewer/id6748752277") {
-                await MainActor.run {
-                    UIApplication.shared.open(url)
-                }
+        if let url = URL(string: "https://apps.apple.com/us/app/diu-routine-viewer/id6748752277") {
+            await MainActor.run {
+                UIApplication.shared.open(url)
             }
         }
     }
