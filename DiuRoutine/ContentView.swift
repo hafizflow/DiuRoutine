@@ -319,9 +319,18 @@ struct ContentView: View {
                                 isTeacherSearchActive.toggle()
                             }
                         } label: {
-                            Image(systemName: (isSectionSearchActive || isTeacherSearchActive) ? "checkmark" : tab.actionSymbol)
-                                .font(.system(size: 22, weight: .medium))
-                                .frame(width: 65, height: 65)
+                            Image(systemName: {
+                                switch tab {
+                                    case .student:
+                                        return (activeTab == .student && isSectionSearchActive) ? "checkmark" : tab.actionSymbol
+                                    case .faculty:
+                                        return (activeTab == .faculty && isTeacherSearchActive) ? "checkmark" : tab.actionSymbol
+                                    default:
+                                        return tab.actionSymbol
+                                }
+                            }())
+                            .font(.system(size: 22, weight: .medium))
+                            .frame(width: 65, height: 65)
                         }
                         .foregroundStyle(.primary)
                     }

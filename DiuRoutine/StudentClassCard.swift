@@ -100,7 +100,7 @@ struct StudentClassCard: View {
                                 // Teacher Name
                             HStack(spacing: 12) {
                                 Image(systemName: "person.and.background.striped.horizontal")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.primary)
                                     .frame(width: 20)
                                 Text(teacherName)
                                     .font(.headline)
@@ -111,69 +111,70 @@ struct StudentClassCard: View {
                                 // Designation
                             HStack(spacing: 12) {
                                 Image(systemName: "person.text.rectangle")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.primary)
                                     .frame(width: 20)
                                 Text(teacherDesignation)
                             }
                             
                                 // Email
-                            if !mergedRoutine.teacherEmail.isEmpty {
-                                Button {
-                                    UIPasteboard.general.string = mergedRoutine.teacherEmail
-                                    impactFeedback.impactOccurred()
-                                    
-                                    Toast.default(
-                                        image: UIImage(systemName: "square.on.square.fill")!,
-                                        title: mergedRoutine.teacherEmail,
-                                        subtitle: "Copied in Clipboard"
-                                    )
-                                    .show()
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "envelope.fill")
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: 20)
-                                        Text(teacherEmail)
-                                        Spacer()
+                            Button {
+                                UIPasteboard.general.string = mergedRoutine.teacherEmail
+                                impactFeedback.impactOccurred()
+                                
+                                Toast.default(
+                                    image: UIImage(systemName: "square.on.square.fill")!,
+                                    title: mergedRoutine.teacherEmail,
+                                    subtitle: "Copied in Clipboard"
+                                )
+                                .show()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "envelope.fill")
+                                        .foregroundStyle(.primary)
+                                        .frame(width: 20)
+                                    Text(teacherEmail)
+                                    Spacer()
+                                    if !mergedRoutine.teacherCell.isEmpty {
                                         Image(systemName: "square.on.square")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.primary)
                                     }
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .buttonStyle(.plain)
+                            
                             
                                 // Phone
-                            if !mergedRoutine.teacherCell.isEmpty {
-                                Button {
-                                    UIPasteboard.general.string = mergedRoutine.teacherCell
-                                    impactFeedback.impactOccurred()
-                                    
-                                    Toast.default(
-                                        image: UIImage(systemName: "square.on.square.fill")!,
-                                        title: mergedRoutine.teacherCell,
-                                        subtitle: "Copied in Clipboard"
-                                    )
-                                    .show()
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "phone.fill")
-                                            .foregroundStyle(.secondary)
-                                            .frame(width: 20)
-                                        Text(teacherCell)
-                                        Spacer()
+                            Button {
+                                UIPasteboard.general.string = mergedRoutine.teacherCell
+                                impactFeedback.impactOccurred()
+                                
+                                Toast.default(
+                                    image: UIImage(systemName: "square.on.square.fill")!,
+                                    title: mergedRoutine.teacherCell,
+                                    subtitle: "Copied in Clipboard"
+                                )
+                                .show()
+                            } label: {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "phone.fill")
+                                        .foregroundStyle(.primary)
+                                        .frame(width: 20)
+                                    Text(teacherCell)
+                                    Spacer()
+                                    if !mergedRoutine.teacherCell.isEmpty {
                                         Image(systemName: "square.on.square")
                                             .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.primary)
                                     }
                                 }
-                                .buttonStyle(.plain)
                             }
+                            .buttonStyle(.plain)
                             
                                 // Room
                             HStack(spacing: 12) {
                                 Image(systemName: "mappin.and.ellipse")
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(.primary)
                                     .frame(width: 20)
                                 Text(teacherRoom)
                             }
