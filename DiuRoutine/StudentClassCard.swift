@@ -134,7 +134,7 @@ struct StudentClassCard: View {
                                         .frame(width: 20)
                                     Text(teacherEmail)
                                     Spacer()
-                                    if !mergedRoutine.teacherCell.isEmpty {
+                                    if !mergedRoutine.teacherEmail.isEmpty {
                                         Image(systemName: "square.on.square")
                                             .font(.caption)
                                             .foregroundStyle(.primary)
