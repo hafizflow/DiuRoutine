@@ -326,10 +326,12 @@ struct ActivityView: UIViewControllerRepresentable {
 }
 
 
-
 struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
-        return WKWebView()
+        let webView = WKWebView()
+        webView.isOpaque = false
+        webView.backgroundColor = .black
+        return webView
     }
     
     func updateUIView(_ webView: WKWebView, context: Context) {
@@ -347,8 +349,7 @@ struct WebViewSheet: View {
     
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            WebView()
-                .ignoresSafeArea()
+            WebView().ignoresSafeArea()
             
             if #available(iOS 26.0, *) {
                 Button(action: { dismiss() }) {
