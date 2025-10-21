@@ -414,7 +414,7 @@ struct TeacherView: View {
             return TeacherData(
                 name: "Unknown",
                 initial: "N/A",
-                designation: "N/A",
+                designation: "Lecturer",
                 phone: "N/A",
                 email: "N/A",
                 room: "N/A",
@@ -430,7 +430,7 @@ struct TeacherView: View {
             return TeacherData(
                 name: firstRoutine.teacherInfo?.name ?? "Unknown",
                 initial: firstRoutine.initial ?? "N/A",
-                designation: firstRoutine.teacherInfo?.designation ?? "N/A",
+                designation: firstRoutine.teacherInfo?.designation ?? "Lecturer",
                 phone: firstRoutine.teacherInfo?.cell ?? "N/A",
                 email: firstRoutine.teacherInfo?.email ?? "N/A",
                 room: firstRoutine.teacherInfo?.teacherRoom ?? "N/A",
@@ -442,7 +442,7 @@ struct TeacherView: View {
         return TeacherData(
             name: "Unknown",
             initial: "N/A",
-            designation: "N/A",
+            designation: "Lecturer",
             phone: "N/A",
             email: "N/A",
             room: "N/A",

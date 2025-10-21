@@ -43,8 +43,8 @@ struct TeacherInsights: View {
     
     
         // ✅ Fallback values declared once
-    private var teacherName: String { teacher.name.isEmpty ? "Unknown Teacher" : teacher.name }
-    private var teacherDesignation: String { teacher.designation.isEmpty ? "N/A" : teacher.designation }
+    private var teacherName: String { teacher.name.isEmpty ? "Unknown" : teacher.name }
+    private var teacherDesignation: String { teacher.designation.isEmpty ? "Lecturer" : teacher.designation }
     private var teacherEmail: String { teacher.email.isEmpty || teacher.email == "N/A" ? "N/A" : teacher.email }
     private var teacherPhone: String { teacher.phone.isEmpty || teacher.phone == "N/A" ? "N/A" : teacher.phone }
     private var teacherRoom: String { teacher.room.isEmpty || teacher.room == "N/A" ? "N/A" : teacher.room }
@@ -90,6 +90,7 @@ struct TeacherInsights: View {
                         
                         Button(action: {
                             generateTeacherPDF()
+                            impactFeedback.impactOccurred()
                         }) {
                             ZStack(alignment: .center) {
                                 RoundedRectangle(cornerRadius: 15)
@@ -440,173 +441,6 @@ struct TeacherInsights: View {
 
         }
     }
-    
-//    func generateTeacherPDF() {
-//        guard !mergedRoutines.isEmpty else { return }
-//        
-//        let pdfMetaData = [
-//            kCGPDFContextCreator: "Class Routine App",
-//            kCGPDFContextTitle: "Class Routine - \(searchedTeacher)"
-//        ]
-//        let format = UIGraphicsPDFRendererFormat()
-//        format.documentInfo = pdfMetaData as [String: Any]
-//        
-//        let pageRect = CGRect(x: 0, y: 0, width: 595, height: 842)
-//        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: format)
-//        
-//        let data = renderer.pdfData { context in
-//            context.beginPage()
-//            
-//            let titleFont = UIFont.boldSystemFont(ofSize: 24)
-//            let subtitleFont = UIFont.systemFont(ofSize: 14)
-//            let headerFont = UIFont.boldSystemFont(ofSize: 12)
-//            let bodyFont = UIFont.systemFont(ofSize: 11)
-//            
-//                // Title
-//            let title = "Class Routine - \(searchedTeacher)"
-//            let titleAttributes: [NSAttributedString.Key: Any] = [.font: titleFont, .foregroundColor: UIColor.black]
-//            let titleSize = title.size(withAttributes: titleAttributes)
-//            let titleRect = CGRect(x: (pageRect.width - titleSize.width) / 2, y: 40, width: titleSize.width, height: titleSize.height)
-//            title.draw(in: titleRect, withAttributes: titleAttributes)
-//            
-//                // Version
-//            let subtitle = "Version: \(versionStore.routineVersion)"
-//            let subtitleAttributes: [NSAttributedString.Key: Any] = [.font: subtitleFont, .foregroundColor: UIColor.gray]
-//            let subtitleSize = subtitle.size(withAttributes: subtitleAttributes)
-//            let subtitleRect = CGRect(x: (pageRect.width - subtitleSize.width) / 2, y: 70, width: subtitleSize.width, height: subtitleSize.height)
-//            subtitle.draw(in: subtitleRect, withAttributes: subtitleAttributes)
-//            
-//                // Table setup
-//            let tableTop: CGFloat = 110
-//            let tableLeft: CGFloat = 40
-//            let colWidths: [CGFloat] = [85, 130, 80, 70, 140] // Day, Time, Course, Section, Room (Teacher REMOVED)
-//            let rowHeight: CGFloat = 30
-//            let headers = ["Day", "Time", "Course", "Section", "Room"]
-//            
-//                // Draw table header
-//            var xPos = tableLeft
-//            let headerRect = CGRect(x: tableLeft, y: tableTop, width: colWidths.reduce(0, +), height: rowHeight)
-//            context.cgContext.setFillColor(UIColor.systemTeal.withAlphaComponent(0.2).cgColor)
-//            context.cgContext.fill(headerRect)
-//            
-//            for (i, header) in headers.enumerated() {
-//                let rect = CGRect(x: xPos, y: tableTop + 7, width: colWidths[i], height: rowHeight)
-//                let paragraphStyle = NSMutableParagraphStyle()
-//                paragraphStyle.alignment = .center
-//                let attr: [NSAttributedString.Key: Any] = [.font: headerFont, .paragraphStyle: paragraphStyle]
-//                header.draw(in: rect, withAttributes: attr)
-//                xPos += colWidths[i]
-//            }
-//            
-//            context.cgContext.setStrokeColor(UIColor.black.cgColor)
-//            context.cgContext.setLineWidth(1.5)
-//            context.cgContext.stroke(headerRect)
-//            
-//                // Draw vertical lines between header columns
-//            xPos = tableLeft
-//            for i in 0..<colWidths.count {
-//                xPos += colWidths[i]
-//                if i < colWidths.count - 1 {
-//                    context.cgContext.move(to: CGPoint(x: xPos, y: tableTop))
-//                    context.cgContext.addLine(to: CGPoint(x: xPos, y: tableTop + rowHeight))
-//                    context.cgContext.strokePath()
-//                }
-//            }
-//            
-//                // Draw table rows with merged Day cells
-//            var yPos = tableTop + rowHeight
-//            var index = 0
-//            while index < mergedRoutines.count {
-//                let routine = mergedRoutines[index]
-//                let day = routine.routines.first?.day ?? "-"
-//                
-//                    // Count how many consecutive routines have the same day
-//                var span = 1
-//                for nextIndex in (index + 1)..<mergedRoutines.count {
-//                    let nextRoutine = mergedRoutines[nextIndex]
-//                    if nextRoutine.routines.first?.day == day {
-//                        span += 1
-//                    } else {
-//                        break
-//                    }
-//                }
-//                
-//                    // Calculate maximum row height for this span
-//                var maxRowHeight: CGFloat = rowHeight
-//                for row in 0..<span {
-//                    let r = mergedRoutines[index + row]
-//                    let values = [
-//                        "", // Day column drawn separately
-//                        "\(format12Hour(r.startTime)) - \(format12Hour(r.endTime))",
-//                        r.courseCode,
-//                        r.section,
-//                        r.room
-//                    ]
-//                    
-//                    for (i, value) in values.enumerated() {
-//                        let maxWidth = colWidths[i] - 10
-//                        let size = NSString(string: value).boundingRect(
-//                            with: CGSize(width: maxWidth, height: CGFloat.greatestFiniteMagnitude),
-//                            options: [.usesLineFragmentOrigin, .usesFontLeading],
-//                            attributes: [.font: bodyFont],
-//                            context: nil
-//                        )
-//                        maxRowHeight = max(maxRowHeight, size.height + 14)
-//                    }
-//                }
-//                
-//                    // Draw Day cell once for 'span' rows
-//                let dayRect = CGRect(x: tableLeft, y: yPos, width: colWidths[0], height: maxRowHeight * CGFloat(span))
-//                context.cgContext.stroke(dayRect)
-//                
-//                    // Vertically center the Day text
-//                let dayTextSize = day.size(withAttributes: [.font: bodyFont])
-//                let dayTextY = yPos + (maxRowHeight * CGFloat(span) - dayTextSize.height) / 2
-//                let centeredDayRect = CGRect(x: tableLeft, y: dayTextY, width: colWidths[0], height: dayTextSize.height)
-//                let dayPara = NSMutableParagraphStyle()
-//                dayPara.alignment = .center
-//                let dayAttr: [NSAttributedString.Key: Any] = [.font: bodyFont, .paragraphStyle: dayPara]
-//                day.draw(in: centeredDayRect, withAttributes: dayAttr)
-//                
-//                    // Draw the rest columns for each routine
-//                for row in 0..<span {
-//                    let r = mergedRoutines[index + row]
-//                    let values = [
-//                        "", // Day already drawn
-//                        "\(format12Hour(r.startTime)) - \(format12Hour(r.endTime))",
-//                        r.courseCode,
-//                        r.section,
-//                        r.room
-//                    ]
-//                    
-//                    var xCell = tableLeft
-//                    for (i, value) in values.enumerated() {
-//                        let cellRect = CGRect(x: xCell, y: yPos + CGFloat(row) * maxRowHeight, width: colWidths[i], height: maxRowHeight)
-//                        
-//                        if i != 0 {
-//                            context.cgContext.stroke(cellRect)
-//                        }
-//                        
-//                        let para = NSMutableParagraphStyle()
-//                        para.alignment = .center
-//                        value.draw(in: cellRect.insetBy(dx: 5, dy: 7), withAttributes: [.font: bodyFont, .paragraphStyle: para])
-//                        
-//                        xCell += colWidths[i]
-//                    }
-//                }
-//                
-//                yPos += maxRowHeight * CGFloat(span)
-//                index += span
-//            }
-//        }
-//        
-//        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("ClassRoutine - \(searchedTeacher).pdf")
-//        try? data.write(to: tempURL)
-//        pdfURL = tempURL
-//        showPDF = true
-//    }
-    
-    
     
     func generateTeacherPDF() {
         guard !mergedRoutines.isEmpty else { return }

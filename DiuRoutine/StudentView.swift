@@ -332,8 +332,8 @@ struct StudentView: View {
             let initial = routine.initial ?? "N/A"
             if !seen.contains(initial) {
                 seen.insert(initial)
-                let name = routine.teacherInfo?.name ?? "Unknown Teacher"
-                let designation = routine.teacherInfo?.designation ?? "Lecturer"
+                let name = (routine.teacherInfo?.name?.isEmpty == false) ? routine.teacherInfo!.name! : "Unknown Teacher"
+                let designation = (routine.teacherInfo?.designation?.isEmpty == false) ? routine.teacherInfo!.designation! : "Lecturer"
                 let imageUrl = routine.teacherInfo?.imageUrl ?? "https://via.placeholder.com/100"
                 
                 teachers.append(TeacherInfo(

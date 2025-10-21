@@ -40,6 +40,7 @@ struct StudentInsight: View {
     }
     
     @Environment(\.dismiss) var dismiss
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
     
     var body: some View {
 //        let _ = {
@@ -92,6 +93,7 @@ struct StudentInsight: View {
                         
                         
                         Button(action: {
+                            impactFeedback.impactOccurred()
                             if pdfURL != nil {
                                 showPDF = true
                             }

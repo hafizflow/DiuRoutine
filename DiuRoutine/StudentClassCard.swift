@@ -31,13 +31,14 @@ struct StudentClassCard: View {
     
         // ✅ Fallback values declared once
     private var teacherName: String { mergedRoutine.teacherName.isEmpty ? "Unknown Teacher" : mergedRoutine.teacherName }
-    private var teacherDesignation: String { mergedRoutine.teacherDesignation.isEmpty ? "N/A" : mergedRoutine.teacherDesignation }
+    private var teacherDesignation: String { mergedRoutine.teacherDesignation.isEmpty ? "Lecturer" : mergedRoutine.teacherDesignation }
     private var teacherEmail: String { mergedRoutine.teacherEmail.isEmpty ? "N/A" : mergedRoutine.teacherEmail }
     private var teacherCell: String { mergedRoutine.teacherCell.isEmpty ? "N/A" : mergedRoutine.teacherCell }
     private var teacherRoom: String { mergedRoutine.teacherRoom.isEmpty ? "N/A" : mergedRoutine.teacherRoom }
     private var teacherInitial: String { mergedRoutine.teacherInitial.isEmpty ? "N/A" : mergedRoutine.teacherInitial }
     
     @Environment(\.colorScheme) var colorScheme
+    @State private var showTeacherDetails = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -83,37 +84,9 @@ struct StudentClassCard: View {
                         .fontWeight(.semibold)
                         .foregroundStyle(.secondary)
                     
-                    Menu {
-                        Button(teacherName, systemImage: "") {}
-                        Divider()
-                        Button(teacherDesignation, systemImage: "person.text.rectangle") {}
-                        Button(teacherEmail, systemImage: "envelope.fill") {
-                            if mergedRoutine.teacherEmail.isEmpty { return } else {
-                                UIPasteboard.general.string = mergedRoutine.teacherEmail
-                                impactFeedback.impactOccurred()
-                                
-                                Toast.default(
-                                    image: UIImage(systemName: "square.on.square.fill")!,
-                                    title: mergedRoutine.teacherEmail,
-                                    subtitle: "Copied in Clipboard"
-                                )
-                                .show()
-                            }
-                        }
-                        Button(teacherCell, systemImage: "phone.fill") {
-                            if mergedRoutine.teacherCell.isEmpty { return } else {
-                                UIPasteboard.general.string = mergedRoutine.teacherCell
-                                impactFeedback.impactOccurred()
-                                
-                                Toast.default(
-                                    image: UIImage(systemName: "square.on.square.fill")!,
-                                    title: mergedRoutine.teacherCell,
-                                    subtitle: "Copied in Clipboard"
-                                )
-                                .show()
-                            }
-                        }
-                        Button(teacherRoom, systemImage: "mappin.and.ellipse") {}
+                    Button {
+                        impactFeedback.impactOccurred()
+                        showTeacherDetails = true
                     } label: {
                         Text(mergedRoutine.teacherInitial)
                             .font(.system(size: 16))
@@ -121,9 +94,94 @@ struct StudentClassCard: View {
                             .foregroundStyle(.teal.opacity(0.9))
                             .brightness(-0.2)
                     }
-                    .menuOrder(.fixed)
                     .buttonStyle(.plain)
-                    .contentShape(Rectangle())
+                    .popover(isPresented: $showTeacherDetails) {
+                        VStack(alignment: .leading, spacing: 16) {
+                                // Teacher Name
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.and.background.striped.horizontal")
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(teacherName)
+                                    .font(.headline)
+                            }
+                            
+                            Divider()
+                            
+                                // Designation
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.text.rectangle")
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(teacherDesignation)
+                            }
+                            
+                                // Email
+                            if !mergedRoutine.teacherEmail.isEmpty {
+                                Button {
+                                    UIPasteboard.general.string = mergedRoutine.teacherEmail
+                                    impactFeedback.impactOccurred()
+                                    
+                                    Toast.default(
+                                        image: UIImage(systemName: "square.on.square.fill")!,
+                                        title: mergedRoutine.teacherEmail,
+                                        subtitle: "Copied in Clipboard"
+                                    )
+                                    .show()
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "envelope.fill")
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 20)
+                                        Text(teacherEmail)
+                                        Spacer()
+                                        Image(systemName: "square.on.square")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            
+                                // Phone
+                            if !mergedRoutine.teacherCell.isEmpty {
+                                Button {
+                                    UIPasteboard.general.string = mergedRoutine.teacherCell
+                                    impactFeedback.impactOccurred()
+                                    
+                                    Toast.default(
+                                        image: UIImage(systemName: "square.on.square.fill")!,
+                                        title: mergedRoutine.teacherCell,
+                                        subtitle: "Copied in Clipboard"
+                                    )
+                                    .show()
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "phone.fill")
+                                            .foregroundStyle(.secondary)
+                                            .frame(width: 20)
+                                        Text(teacherCell)
+                                        Spacer()
+                                        Image(systemName: "square.on.square")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            
+                                // Room
+                            HStack(spacing: 12) {
+                                Image(systemName: "mappin.and.ellipse")
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 20)
+                                Text(teacherRoom)
+                            }
+                        }
+                        .padding()
+                        .frame(minWidth: 250)
+                        .presentationCompactAdaptation(.popover)
+                    }
                 }
             }
             
