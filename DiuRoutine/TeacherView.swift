@@ -42,7 +42,11 @@ struct TeacherView: View {
                 // Only add if we haven't seen this initial before
             if !seenInitials.contains(initial) {
                 seenInitials.insert(initial)
-                let name = routine.teacherInfo?.name ?? "Unknown"
+                
+                    // Safely unwrap and check for empty string
+                let rawName = routine.teacherInfo?.name
+                let name = (rawName?.isEmpty ?? true) ? "Unknown" : rawName!
+                
                 teachers.append((name, initial))
             }
         }

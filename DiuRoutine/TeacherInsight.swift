@@ -160,7 +160,11 @@ struct TeacherInsights: View {
                                             Circle()
                                                 .fill(.gray.opacity(0.3))
                                                 .frame(width: 55, height: 55)
-                                                .overlay(Image(systemName: "person.fill").foregroundStyle(.secondary))
+                                                .overlay(
+                                                    Text(teacher.initial.prefix(2))
+                                                        .font(.headline)
+                                                        .foregroundColor(.primary)
+                                                )
                                             
                                         @unknown default:
                                             EmptyView()
