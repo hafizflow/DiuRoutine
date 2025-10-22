@@ -61,11 +61,6 @@ struct TeacherView: View {
         guard !searchText.teacherRoutineSearchText.isEmpty else { return [] }
         guard isValidTeacher else { return [] }
         
-//        var filtered = routines.filter { routine in
-//            guard let initial = routine.initial else { return false }
-//            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
-//        }
-        
         var filtered = routines.filter { routine in
             guard let initial = routine.initial else { return false }
             return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
@@ -185,7 +180,7 @@ struct TeacherView: View {
             // Get ALL routines for this teacher (no day filter)
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedStandardContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
             // Group by day
@@ -287,7 +282,7 @@ struct TeacherView: View {
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
         var seen = Set<String>()
@@ -310,7 +305,7 @@ struct TeacherView: View {
         
         let routinesForSection = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
         let totalMinutes = routinesForSection.reduce(0) { partial, routine in
@@ -336,7 +331,7 @@ struct TeacherView: View {
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
         let groupedByDay = Dictionary(grouping: routinesForTeacher) { routine in
@@ -362,7 +357,7 @@ struct TeacherView: View {
         
         let routinesForTeacher = routines.filter { routine in
             guard let initial = routine.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }
         
         var seen = Set<String>()
@@ -425,7 +420,7 @@ struct TeacherView: View {
             // Find routine
         if let firstRoutine = routines.first(where: { routine in
             guard let initial = routine.teacherInfo?.initial else { return false }
-            return initial.localizedCaseInsensitiveContains(searchText.teacherRoutineSearchText)
+            return initial.caseInsensitiveCompare(searchText.teacherRoutineSearchText) == .orderedSame
         }) {
             return TeacherData(
                 name: firstRoutine.teacherInfo?.name ?? "Unknown",
