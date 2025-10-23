@@ -11,7 +11,12 @@ Key Features
 - Offline Access: Stores data locally for quick access even without internet. <br>
 
 
-## [<img width="25" height="25" alt="logo" src="https://github.com/user-attachments/assets/3dd50221-c70b-406d-b714-e459ab51ff37" style="vertical-align:middle;"/> App Store Link](https://apps.apple.com/us/app/diu-routine/id6748752277)
+<h2>
+  <a href="https://apps.apple.com/us/app/diu-routine/id6748752277" target="_blank" style="text-decoration: none; color: inherit;">
+    <img width="25" height="25" alt="logo" src="https://github.com/user-attachments/assets/3dd50221-c70b-406d-b714-e459ab51ff37" style="vertical-align: middle; margin-right: 6px;" />
+    App Store Link
+  </a>
+</h2>
 
 
 ## App Demo
