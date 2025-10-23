@@ -194,23 +194,38 @@ struct ContentView: View {
                     }
             } else {
                 ZStack(alignment: .bottom) {
-                    TabView(selection: $activeTab) {
-                        Tab(value: .student) {
+                    if #available(iOS 18.0, *) {
+                        TabView(selection: $activeTab) {
+                            Tab(value: .student) {
+                                StudentView(isSearchActive: $isSectionSearchActive)
+                                    .toolbarVisibility(.hidden, for: .tabBar)
+                            }
+                            
+                            Tab(value: .faculty) {
+                                TeacherView(isSearchActive: $isTeacherSearchActive)
+                                    .toolbarVisibility(.hidden, for: .tabBar)
+                            }
+                            
+                            Tab(value: .emptyRoom) {
+                                EmptyRoomView(selectedTime: $selectedTime)
+                                    .toolbarVisibility(.hidden, for: .tabBar)
+                            }
+                        }
+                        .ignoresSafeArea(.all, edges: .bottom)
+                    } else {
+                        TabView(selection: $activeTab) {
                             StudentView(isSearchActive: $isSectionSearchActive)
-                                .toolbarVisibility(.hidden, for: .tabBar)
-                        }
-                        
-                        Tab(value: .faculty) {
+                                .tag(CustomTab.student)
+                            
                             TeacherView(isSearchActive: $isTeacherSearchActive)
-                                .toolbarVisibility(.hidden, for: .tabBar)
-                        }
-                        
-                        Tab(value: .emptyRoom) {
+                                .tag(CustomTab.faculty)
+                            
                             EmptyRoomView(selectedTime: $selectedTime)
-                                .toolbarVisibility(.hidden, for: .tabBar)
+                                .tag(CustomTab.emptyRoom)
                         }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .ignoresSafeArea(.all, edges: .bottom)
                     }
-                    .ignoresSafeArea(.all, edges: .bottom)
                     
                     CustomTabBarView()
                         .padding(.horizontal, 20)
@@ -218,7 +233,7 @@ struct ContentView: View {
                 .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
                     Text(".")
                         .foregroundStyle(colorScheme == .light ? .white : .black)
-                        .frame(height: 0)
+                        .frame(height: 2)
                         .blendMode(.destinationOver)
                 })
                 .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))

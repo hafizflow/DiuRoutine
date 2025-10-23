@@ -497,6 +497,7 @@ struct TeacherView: View {
                 SettingsView()
             }
             .sheet(isPresented: $insightSheet) {
+                if #available(iOS 18.0, *) {
                     TeacherInsights(
                         searchedTeacher: searchText.teacherRoutineSearchText,
                         sections: uniqueSectionsForTeacher,
@@ -508,8 +509,22 @@ struct TeacherView: View {
                         mergedRoutines: weeklyMergedRoutines
                     )
                     .navigationTransition(.zoom(sourceID: "Insights", in: animation))
-                    .presentationDetents([.fraction(0.6)])
+                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
                     .presentationDragIndicator(.visible)
+                } else {
+                    TeacherInsights(
+                        searchedTeacher: searchText.teacherRoutineSearchText,
+                        sections: uniqueSectionsForTeacher,
+                        totalCoursesEnrolled: uniqueCoursesForTeacher.count,
+                        totalWeeklyClasses: totalWeeklyClasses,
+                        totalWeeklyHours: totalWeeklyDurationForTeacher,
+                        courses: uniqueCoursesForTeacher,
+                        teacher: teacherInfo,
+                        mergedRoutines: weeklyMergedRoutines
+                    )
+                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
+                    .presentationDragIndicator(.visible)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

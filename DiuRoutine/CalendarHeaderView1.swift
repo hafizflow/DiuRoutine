@@ -86,7 +86,7 @@ struct CalendarHeaderView1: View {
             
                 // Drag indicator
             Capsule()
-                .fill(.gray.mix(with: .secondary, by: 0.6))
+                .fill(mixedGrayColor())
                 .frame(width: 40, height: 4)
                 .padding(.bottom, 8)
                 .padding(.top, Constants.defaultPadding - 4)
@@ -140,5 +140,16 @@ struct CalendarHeaderView1: View {
                 }
         )
         .padding(.bottom)
+    }
+    
+    
+        // Add this helper function somewhere in your view or as an extension
+    private func mixedGrayColor() -> Color {
+        if #available(iOS 18.0, *) {
+            return .gray.mix(with: .secondary, by: 0.6)
+        } else {
+                // Fallback for iOS 17 and below
+            return Color.gray.opacity(0.5)
+        }
     }
 }

@@ -417,19 +417,32 @@ struct StudentView: View {
                 SettingsView()
             }
             .sheet(isPresented: $insightSheet) {
-                StudentInsight(
-                    searchedSection: routineStore.studentRoutineSearchText,
-                    totalCoursesEnrolled: uniqueCoursesForSection.count,
-                    totalWeeklyClasses: totalWeeklyClasses,
-                    totalWeeklyHours: totalWeeklyDurationForSection,
-                    courses: uniqueCoursesForSection,
-                    teachers: uniqueTeachersForSection,
-                    mergedRoutines: weeklyMergedRoutines
-                )
-                
-                .navigationTransition(.zoom(sourceID: "Insights", in: animation))
-                .presentationDetents([.fraction(0.6)])
-                .presentationDragIndicator(.visible)
+                if #available(iOS 18.0, *) {
+                    StudentInsight(
+                        searchedSection: routineStore.studentRoutineSearchText,
+                        totalCoursesEnrolled: uniqueCoursesForSection.count,
+                        totalWeeklyClasses: totalWeeklyClasses,
+                        totalWeeklyHours: totalWeeklyDurationForSection,
+                        courses: uniqueCoursesForSection,
+                        teachers: uniqueTeachersForSection,
+                        mergedRoutines: weeklyMergedRoutines
+                    )
+                    .navigationTransition(.zoom(sourceID: "Insights", in: animation))
+                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
+                    .presentationDragIndicator(.visible)
+                } else {
+                    StudentInsight(
+                        searchedSection: routineStore.studentRoutineSearchText,
+                        totalCoursesEnrolled: uniqueCoursesForSection.count,
+                        totalWeeklyClasses: totalWeeklyClasses,
+                        totalWeeklyHours: totalWeeklyDurationForSection,
+                        courses: uniqueCoursesForSection,
+                        teachers: uniqueTeachersForSection,
+                        mergedRoutines: weeklyMergedRoutines
+                    )
+                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
+                    .presentationDragIndicator(.visible)
+                }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
