@@ -22,5 +22,8 @@ Key Features
 ## App Demo
 <img width="1024" height="1024" alt="App Demo" src="https://github.com/user-attachments/assets/d54333b9-938d-4bc7-813c-24b17046c3ae" />
 
-https://github.com/user-attachments/assets/1aa108e0-897b-4d4b-a3aa-84faac8ccfc8
+## Demo Video
+https://github.com/user-attachments/assets/029be55d-aa35-47d4-918d-ef9ffae63b7e
+
+
 
