@@ -26,7 +26,7 @@ struct MergedRoutine: Identifiable {
 
 struct StudentClassCard: View {
     let mergedRoutine: MergedRoutine
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .rigid)
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     
     
         // ✅ Fallback values declared once

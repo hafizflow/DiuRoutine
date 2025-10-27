@@ -509,7 +509,7 @@ struct TeacherView: View {
                         mergedRoutines: weeklyMergedRoutines
                     )
                     .navigationTransition(.zoom(sourceID: "Insights", in: animation))
-                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
+                    .presentationDetents([.fraction(0.8)])
                     .presentationDragIndicator(.visible)
                 } else {
                     TeacherInsights(
@@ -522,7 +522,7 @@ struct TeacherView: View {
                         teacher: teacherInfo,
                         mergedRoutines: weeklyMergedRoutines
                     )
-                    .presentationDetents([.fraction(0.6), .fraction(0.8)])
+                    .presentationDetents([.fraction(0.8)])
                     .presentationDragIndicator(.visible)
                 }
             }

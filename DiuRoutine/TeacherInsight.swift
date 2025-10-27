@@ -425,12 +425,6 @@ struct TeacherInsights: View {
                     Text("Insights").font(.title2.bold())
                 }
                 
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Settings", systemImage: "magnifyingglass") {
-                        
-                    }.tint(.primary).contentShape(Rectangle())
-                }
-                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "multiply") {
                         dismiss()

@@ -102,7 +102,7 @@ struct SettingsView: View {
                                 )
                                 
                                 let toast = Toast.default(
-                                    image: UIImage(systemName: cStyle ? "calendar" : "ellipsis.calendar")!,
+                                    image: UIImage(systemName: cStyle ? "calendar.circle.fill" : "calendar.circle")!,
                                     title: "Calender Style Changed",
                                     subtitle: "Calender Style is now \(cStyle ? "Default" : "Standard")",
                                     config: config

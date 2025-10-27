@@ -15,7 +15,7 @@ struct WeekView2: View {
     @State private var showDatePicker = false
     @State private var weekOffset = 0
     
-    private let impactFeedback = UIImpactFeedbackGenerator(style: .soft)
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     
     private var calendar: Calendar {
         var cal = Calendar.current
@@ -173,7 +173,7 @@ struct WeekRowView: View {
     private var datesForWeek: [Date] {
         (0..<7).compactMap { index in
             let date = calendar.date(byAdding: .day, value: index, to: baseDate)
-            if let date, calendar.component(.weekday, from: date) != 6 { 
+            if let date, calendar.component(.weekday, from: date) != 6 {
                 return date
             }
             return nil
@@ -196,7 +196,7 @@ struct WeekRowView: View {
             }
         }
     }
-
+    
 }
 
 struct DayView2: View {
@@ -254,7 +254,7 @@ struct DayView2: View {
                 .font(.title3)
                 .fontWeight(isSelected ? .bold : .semibold)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .foregroundColor(textColor)
         .padding(.vertical, 8)
         .background(
@@ -264,6 +264,7 @@ struct DayView2: View {
                     .stroke(borderColor, lineWidth: isToday ? 2 : 1.2)
             }
         )
+        .contentShape(Rectangle())
         .cornerRadius(10)
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-    // Tab Items!
+    // MARK: - Tab Items
 enum CustomTab: String, CaseIterable, Hashable {
     case student = "Student"
     case faculty = "Faculty"
@@ -28,7 +28,8 @@ enum CustomTab: String, CaseIterable, Hashable {
     }
 }
 
-    // MARK: - Coordinator
+    // MARK: - iOS 26+ Custom TabBar Components
+@available(iOS 26.0, *)
 final class CustomTabBarCoordinator: NSObject {
     var activeTab: Binding<CustomTab>
     
@@ -42,7 +43,7 @@ final class CustomTabBarCoordinator: NSObject {
     }
 }
 
-    // MARK: - CustomTabBar
+@available(iOS 26.0, *)
 struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     var size: CGSize
     var activeTint: Color = .teal.opacity(0.7)
@@ -82,7 +83,7 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
             }
         }
         
-            // Hide dividers - more reliable approach
+            // Hide dividers
         DispatchQueue.main.async {
             control.subviews.forEach { subview in
                 if String(describing: type(of: subview)).contains("Divider") {
@@ -119,7 +120,108 @@ struct CustomTabBar<TabItemView: View>: UIViewRepresentable {
     }
 }
 
-    // MARK: - Extensions
+    // MARK: - iOS 18 and Lower Custom TabBar Components
+struct LegacyCustomTabBar: View {
+    @Binding var activeTab: CustomTab
+    var activeTint: Color
+    var inactiveTint: Color
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(CustomTab.allCases, id: \.self) { tab in
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        activeTab = tab
+                    }
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.symbol)
+                            .font(.title3)
+                            .symbolVariant(tab == activeTab ? .fill : .none)
+                        
+                        Text(tab.rawValue)
+                            .font(.system(size: 10))
+                            .fontWeight(.medium)
+                    }
+                    .foregroundStyle(tab == activeTab ? activeTint : inactiveTint)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 60)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+        }
+    }
+}
+
+struct LegacyActionButton: View {
+    @Binding var activeTab: CustomTab
+    @Binding var isSectionSearchActive: Bool
+    @Binding var isTeacherSearchActive: Bool
+    @Binding var selectedTime: String?
+    
+    private let timeSlots = [
+        "08:30 - 10:00",
+        "10:00 - 11:30",
+        "11:30 - 01:00",
+        "01:00 - 02:30",
+        "02:30 - 04:00",
+        "04:00 - 05:30"
+    ]
+    
+    var body: some View {
+        Group {
+            if activeTab == .emptyRoom {
+                Menu {
+                    ForEach(timeSlots, id: \.self) { time in
+                        Button {
+                            selectedTime = time
+                        } label: {
+                            Label(time, systemImage: selectedTime == time ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    Image(systemName: activeTab.actionSymbol)
+                        .font(.system(size: 22, weight: .medium))
+                        .frame(width: 65, height: 65)
+                }
+                .foregroundStyle(.primary)
+            } else {
+                Button {
+                    if activeTab == .student {
+                        isSectionSearchActive.toggle()
+                    } else if activeTab == .faculty {
+                        isTeacherSearchActive.toggle()
+                    }
+                } label: {
+                    Image(systemName: {
+                        switch activeTab {
+                            case .student:
+                                return isSectionSearchActive ? "checkmark" : activeTab.actionSymbol
+                            case .faculty:
+                                return isTeacherSearchActive ? "checkmark" : activeTab.actionSymbol
+                            default:
+                                return activeTab.actionSymbol
+                        }
+                    }())
+                    .font(.system(size: 22, weight: .medium))
+                    .frame(width: 65, height: 65)
+                }
+                .foregroundStyle(.primary)
+            }
+        }
+        .background {
+            Capsule()
+                .fill(.ultraThinMaterial)
+        }
+    }
+}
+
+    // MARK: - View Extensions
 extension View {
     @ViewBuilder
     func blurFade(_ status: Bool) -> some View {
@@ -128,37 +230,26 @@ extension View {
             .blur(radius: status ? 0 : 10)
             .opacity(status ? 1 : 0)
     }
-    
+}
+
+@available(iOS 26.0, *)
+extension View {
     @ViewBuilder
     func compatibleSafeAreaBar<Content: View>(
         edge: VerticalEdge,
         spacing: CGFloat = 0,
         @ViewBuilder content: () -> Content
     ) -> some View {
-        if #available(iOS 26.0, *) {
-            self.safeAreaBar(edge: edge, spacing: spacing, content: content)
-        } else {
-            self.overlay(alignment: edge == .bottom ? .bottom : .top) {
-                content()
-            }
-        }
+        self.safeAreaBar(edge: edge, spacing: spacing, content: content)
     }
     
     @ViewBuilder
     func compatibleGlassEffect() -> some View {
-        if #available(iOS 26.0, *) {
-            self.glassEffect(.regular.interactive(), in: .capsule)
-        } else {
-            self
-                .background {
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                }
-                .clipShape(Capsule())
-        }
+        self.glassEffect(.regular.interactive(), in: .capsule)
     }
 }
 
+    // MARK: - Content View
 struct ContentView: View {
     @AppStorage("lastSelectedTab") private var lastSelectedTabRawValue: String = CustomTab.student.rawValue
     @Environment(\.modelContext) private var modelContext
@@ -185,6 +276,10 @@ struct ContentView: View {
     private let impactFeedback = UIImpactFeedbackGenerator(style: .soft)
     @Query private var routines: [RoutineDO]
     
+    var activeTintColor: Color {
+        Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75)
+    }
+    
     var body: some View {
         Group {
             if versionStore.inMaintenance {
@@ -193,102 +288,87 @@ struct ContentView: View {
                         await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
                     }
             } else {
-                ZStack(alignment: .bottom) {
-                    if #available(iOS 18.0, *) {
-                        TabView(selection: $activeTab) {
-                            Tab(value: .student) {
-                                StudentView(isSearchActive: $isSectionSearchActive)
-                                    .toolbarVisibility(.hidden, for: .tabBar)
-                            }
-                            
-                            Tab(value: .faculty) {
-                                TeacherView(isSearchActive: $isTeacherSearchActive)
-                                    .toolbarVisibility(.hidden, for: .tabBar)
-                            }
-                            
-                            Tab(value: .emptyRoom) {
-                                EmptyRoomView(selectedTime: $selectedTime)
-                                    .toolbarVisibility(.hidden, for: .tabBar)
-                            }
-                        }
-                        .ignoresSafeArea(.all, edges: .bottom)
-                    } else {
-                        TabView(selection: $activeTab) {
-                            StudentView(isSearchActive: $isSectionSearchActive)
-                                .tag(CustomTab.student)
-                            
-                            TeacherView(isSearchActive: $isTeacherSearchActive)
-                                .tag(CustomTab.faculty)
-                            
-                            EmptyRoomView(selectedTime: $selectedTime)
-                                .tag(CustomTab.emptyRoom)
-                        }
-                        .tabViewStyle(.page(indexDisplayMode: .never))
-                        .ignoresSafeArea(.all, edges: .bottom)
-                    }
-                    
-                    CustomTabBarView()
-                        .padding(.horizontal, 20)
-                }
-                .compatibleSafeAreaBar(edge: .bottom, spacing: 0, content: {
-                    Text(".")
-                        .foregroundStyle(colorScheme == .light ? .white : .black)
-                        .frame(height: 2)
-                        .blendMode(.destinationOver)
-                })
-                .tint(Color(hue: 0.5, saturation: 0.8, brightness: colorScheme == .light ? 0.65 : 0.75))
-                .refreshable {
-                    if routines.isEmpty {
-                        versionStore.clearData()
-                        await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
-                    }
-                }
-                .task {
-                    await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
-                }
-                .task {
-                    if let result = await AppVersionManager.shared.checkIfAppUpdateAvailable() {
-                        updateAppInfo = result
-                    }
-                }
-                .sheet(item: $updateAppInfo) { info in
-                    UpdateAvailableSheet(appInfo: info, forceUpdate: forcedAppUpdate)
-                }
-                .onAppear {
-                    if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
-                        activeTab = savedTab
-                    }
-                }
-                .onChange(of: activeTab) { oldValue, newValue in
-                    lastSelectedTabRawValue = newValue.rawValue
+                if #available(iOS 26.0, *) {
+                    iOS26TabView()
+                } else {
+                    LegacyTabView()
                 }
             }
         }
     }
     
+        // MARK: - iOS 26+ View
+    @available(iOS 26.0, *)
+    @ViewBuilder
+    func iOS26TabView() -> some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $activeTab) {
+                Tab(value: .student) {
+                    StudentView(isSearchActive: $isSectionSearchActive)
+                        .toolbarVisibility(.hidden, for: .tabBar)
+                }
+                
+                Tab(value: .faculty) {
+                    TeacherView(isSearchActive: $isTeacherSearchActive)
+                        .toolbarVisibility(.hidden, for: .tabBar)
+                }
+                
+                Tab(value: .emptyRoom) {
+                    EmptyRoomView(selectedTime: $selectedTime)
+                        .toolbarVisibility(.hidden, for: .tabBar)
+                }
+            }
+            .ignoresSafeArea(.all, edges: .bottom)
+            
+            CustomTabBarView()
+                .padding(.horizontal, 20)
+        }
+        .compatibleSafeAreaBar(edge: .bottom, spacing: 0) {
+            Text(".")
+                .foregroundStyle(colorScheme == .light ? .white : .black)
+                .frame(height: 2)
+                .blendMode(.destinationOver)
+        }
+        .tint(activeTintColor)
+        .refreshable {
+            if routines.isEmpty {
+                versionStore.clearData()
+                await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+            }
+        }
+        .task {
+            await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+        }
+        .task {
+            if let result = await AppVersionManager.shared.checkIfAppUpdateAvailable() {
+                updateAppInfo = result
+            }
+        }
+        .sheet(item: $updateAppInfo) { info in
+            UpdateAvailableSheet(appInfo: info, forceUpdate: forcedAppUpdate)
+        }
+        .onAppear {
+            if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
+                activeTab = savedTab
+            }
+        }
+        .onChange(of: activeTab) { oldValue, newValue in
+            lastSelectedTabRawValue = newValue.rawValue
+        }
+    }
+    
+    @available(iOS 26.0, *)
     @ViewBuilder
     func CustomTabBarView() -> some View {
         HStack(spacing: 10) {
-            if #available(iOS 26.0, *) {
-                GlassEffectContainer(spacing: 10) {
-                    TabBarContent()
-                }
-            } else {
-                    // iOS 18 fallback
-                HStack(spacing: 10) {
-                    TabBarContent()
-                }
-                .padding(10)
-                .background {
-                    RoundedRectangle(cornerRadius: 30)
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.15), radius: 8, x: 0, y: 4)
-                }
+            GlassEffectContainer(spacing: 10) {
+                TabBarContent()
             }
         }
         .frame(height: 65)
     }
     
+    @available(iOS 26.0, *)
     @ViewBuilder
     func TabBarContent() -> some View {
         GeometryReader { geometry in
@@ -355,6 +435,79 @@ struct ContentView: View {
         }
         .compatibleGlassEffect()
         .animation(.smooth(duration: 0.55, extraBounce: 0), value: activeTab)
+    }
+    
+        // MARK: - iOS 18 and Lower View
+    @ViewBuilder
+    func LegacyTabView() -> some View {
+        ZStack(alignment: .bottom) {
+            TabView(selection: $activeTab) {
+                StudentView(isSearchActive: $isSectionSearchActive)
+                    .tag(CustomTab.student)
+                
+                TeacherView(isSearchActive: $isTeacherSearchActive)
+                    .tag(CustomTab.faculty)
+                
+                EmptyRoomView(selectedTime: $selectedTime)
+                    .tag(CustomTab.emptyRoom)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .ignoresSafeArea(.all, edges: .bottom)
+            
+            VStack(spacing: 0) {
+                Spacer()
+                
+                HStack(spacing: 10) {
+                    LegacyCustomTabBar(
+                        activeTab: $activeTab,
+                        activeTint: activeTintColor,
+                        inactiveTint: .gray
+                    )
+                    
+                    LegacyActionButton(
+                        activeTab: $activeTab,
+                        isSectionSearchActive: $isSectionSearchActive,
+                        isTeacherSearchActive: $isTeacherSearchActive,
+                        selectedTime: $selectedTime
+                    )
+                }
+                .frame(height: 65)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 10)
+            }
+        }
+        .overlay(alignment: .bottom) {
+            Text(".")
+                .foregroundStyle(colorScheme == .light ? .white : .black)
+                .frame(height: 2)
+                .blendMode(.destinationOver)
+        }
+        .tint(activeTintColor)
+        .refreshable {
+            if routines.isEmpty {
+                versionStore.clearData()
+                await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+            }
+        }
+        .task {
+            await webService.fetchVersion(versionStore: versionStore, modelContext: modelContext)
+        }
+        .task {
+            if let result = await AppVersionManager.shared.checkIfAppUpdateAvailable() {
+                updateAppInfo = result
+            }
+        }
+        .sheet(item: $updateAppInfo) { info in
+            UpdateAvailableSheet(appInfo: info, forceUpdate: forcedAppUpdate)
+        }
+        .onAppear {
+            if let savedTab = CustomTab(rawValue: lastSelectedTabRawValue) {
+                activeTab = savedTab
+            }
+        }
+        .onChange(of: activeTab) { oldValue, newValue in
+            lastSelectedTabRawValue = newValue.rawValue
+        }
     }
 }
 
