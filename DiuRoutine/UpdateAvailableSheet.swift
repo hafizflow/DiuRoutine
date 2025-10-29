@@ -17,7 +17,7 @@ struct UpdateAvailableSheet: View {
                 Text("App Update Available")
                     .font(.title.bold())
                 
-                Text("There is an app update available from\nversion **\(appInfo.currentVersion)** to version **\(appInfo.availableVersion)**!")
+                Text("There is an app update available from\nversion **\(appInfo.availableVersion)** to version **\(appInfo.currentVersion)**!")
                     .font(.callout)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)

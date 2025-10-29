@@ -35,7 +35,7 @@ class AppVersionManager: ObservableObject {
                 return nil
             }
             
-            if currentVersion != availableVersion {                
+            if currentVersion.compare(availableVersion, options: .numeric) == .orderedAscending {
                 return .init(
                     currentVersion: currentVersion,
                     availableVersion: availableVersion,
@@ -45,8 +45,6 @@ class AppVersionManager: ObservableObject {
                 )
             }
             
-            
-            
             return nil
         } catch {
             print(error.localizedDescription)
@@ -54,8 +52,8 @@ class AppVersionManager: ObservableObject {
         }
     }
     
-//            var bundleID: String? { return Bundle.main.bundleIdentifier }
-    var bundleID: String? { return "Routine.Viewer.DIU.DIU-Routine" }
+    var bundleID: String? { return Bundle.main.bundleIdentifier }
+//    var bundleID: String? { return "Routine.Viewer.DIU.DIU-Routine" }
     
     struct ReturnResult: Identifiable {
         private(set) var id: String = UUID().uuidString
