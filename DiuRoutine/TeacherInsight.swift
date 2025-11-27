@@ -420,11 +420,8 @@ struct TeacherInsights: View {
                 .padding(.top, 16)
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Insigths")
             .toolbar {
-                ToolbarItem(placement: .title) {
-                    Text("Insights").font(.title2.bold())
-                }
-                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "multiply") {
                         dismiss()

@@ -377,6 +377,8 @@ struct StudentView: View {
     
     @State private var updateAppInfo: AppVersionManager.ReturnResult?
     
+    @Environment(\.isSearching) var isSearching
+    
     
     
     var body: some View {
@@ -396,7 +398,7 @@ struct StudentView: View {
                 )
             }
             .preferredColorScheme(userTheme.colorScheme)
-            .searchable(text: $routineStore.studentRoutineSearchText, isPresented: $isSearchActive, placement: .toolbar, prompt: "Search Section (61_N)")
+            .searchable(text: $routineStore.studentRoutineSearchText, isPresented: $isSearchActive, placement: .automatic, prompt: "Search Section (61_N)")
             .searchSuggestions {
                 ForEach(allSections.filter { section in
                     routineStore.studentRoutineSearchText.isEmpty || section.localizedCaseInsensitiveContains(routineStore.studentRoutineSearchText)
@@ -445,6 +447,7 @@ struct StudentView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Student")
             .toolbar {
                 if isValidSection {
                     if #available(iOS 26.0, *) {
@@ -467,10 +470,6 @@ struct StudentView: View {
                             .contentShape(Rectangle())
                         }
                     }
-                }
-                
-                ToolbarItem(placement: .title) {
-                    Text("Student").font(.title.bold())
                 }
                 
                 ToolbarItem(placement: .topBarLeading) {

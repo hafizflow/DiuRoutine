@@ -361,9 +361,7 @@ struct ContentView: View {
     @ViewBuilder
     func CustomTabBarView() -> some View {
         HStack(spacing: 10) {
-            GlassEffectContainer(spacing: 10) {
-                TabBarContent()
-            }
+            TabBarContent()
         }
         .frame(height: 65)
     }

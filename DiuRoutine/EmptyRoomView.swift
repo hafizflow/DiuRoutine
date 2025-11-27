@@ -145,7 +145,7 @@ struct EmptyRoomView: View {
                     // Room Cards with Animation
                 ScrollViewReader { proxy in
                     ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
+                        LazyVStack(alignment: .leading, spacing: 0) {
                             Color.clear.frame(height: 2).id(topID)
                             
                             contentView.padding(.horizontal)
@@ -188,6 +188,7 @@ struct EmptyRoomView: View {
             }
             .preferredColorScheme(userTheme.colorScheme)
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Empty Rooms")
             .fullScreenCover(isPresented: $showSettings) {
                 SettingsView()
             }
@@ -198,11 +199,6 @@ struct EmptyRoomView: View {
                     }
                         .tint(.primary)
                         .contentShape(Rectangle())
-                }
-                
-                ToolbarItem(placement: .principal) {
-                    Text("Empty Rooms")
-                        .font(.title.bold())
                 }
             }
         }
@@ -274,18 +270,13 @@ struct RoomCard: View {
                 Text("\(cleanRoomName)")
                     .font(.headline)
                     .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
                 
                 HStack(spacing: 4) {
-                    Image(systemName: "clock.fill")
+                    Image(systemName: "clock")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
-                    Text("\(format12Hour(room.startTime ?? "N/A"))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("-")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Text("\(format12Hour(room.endTime ?? "N/A"))")
+                    Text("\(format12Hour(room.startTime ?? "N/A")) - \(format12Hour(room.endTime ?? "N/A"))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

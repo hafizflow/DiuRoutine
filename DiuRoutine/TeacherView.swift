@@ -527,6 +527,7 @@ struct TeacherView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Teacher")
             .toolbar {
                 if isValidTeacher {
                     if #available(iOS 26.0, *) {
@@ -549,10 +550,6 @@ struct TeacherView: View {
                             .contentShape(Rectangle())
                         }
                     }
-                }
-                
-                ToolbarItem(placement: .title) {
-                    Text("Teacher").font(.title.bold())
                 }
                 
                 ToolbarItem(placement: .topBarLeading) {

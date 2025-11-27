@@ -153,11 +153,8 @@ struct SettingsView: View {
                     .presentationBackground(.clear)
             })
             .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Settings")
             .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Settings").font(.title.bold())
-                }
-                
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("", systemImage: "multiply") {
                         dismiss()
